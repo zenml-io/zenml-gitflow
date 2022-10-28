@@ -1,5 +1,3 @@
-# zenml-gitflow
-A repository that showcases how you can use ZenML with Git
 # :running: Get up and running quickly
 
 Build your first ML pipelines with ZenML.
