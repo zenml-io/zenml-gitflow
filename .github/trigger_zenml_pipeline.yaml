@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+jobs:
+  container-test-job:
+    runs-on: ubuntu-latest
+    container:
+      image: zenmldocker/zenml:0.20.5
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_USERNAME }}
+        KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_PASSWORD }}
+        KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_NAMESPACE }}
+    steps:
+      - id: install-aws-cli
+        uses: unfor19/install-aws-cli-action@v1.0.3
+        with:
+          version: 2     # default
+          verbose: false # default
+          arch: amd64    # allowed values: amd64, arm64
+          rootdir: ""    # defaults to "PWD"
+          workdir: ""    # defaults to "PWD/unfor19-awscli"
+
+      - id: install-kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR Private
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Login to Amazon EKS
+        id: login-eks
+        run: |
+          aws eks --region eu-central-1 update-kubeconfig --name fullvanilladeployment --alias fullvanilladeployment
+
+

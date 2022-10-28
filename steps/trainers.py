@@ -18,19 +18,35 @@ from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
 
 from zenml.client import Client
-from zenml.steps import step
+from zenml.steps import step, BaseParameters
 
 experiment_tracker = Client().active_stack.experiment_tracker
 
+class TrainerParams(BaseParameters):
+    C: int = 1.0
+    kernel: str ="rbf"
+    degree: int = 3
+    coef0: float = 0.0
+    shrinking: bool = True
+    probability: bool = False
 
-@step(enable_cache=False, experiment_tracker=experiment_tracker.name)
+
+@step(experiment_tracker=experiment_tracker.name)
 def svc_trainer_mlflow(
+    params: TrainerParams,
     X_train: pd.DataFrame,
     y_train: pd.Series,
 ) -> ClassifierMixin:
     """Train a sklearn SVC classifier and log to MLflow."""
     mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
-    model = SVC(gamma=0.01)
+    model = SVC(
+        C=params.C,
+        kernel=params.kernel,
+        degree=params.degree,
+        coef0=params.coef0,
+        shrinking=params.shrinking,
+        probability=params.probability,
+    )
     model.fit(X_train.to_numpy(), y_train.to_numpy())
     train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
     print(f"Train accuracy: {train_acc}")

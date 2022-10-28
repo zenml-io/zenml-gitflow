@@ -13,20 +13,14 @@
 #  permissions and limitations under the License.
 
 
-from pipelines import inference_pipeline, training_pipeline
+from pipelines import training_pipeline
 from steps import (
-    deployment_trigger,
-    drift_detector,
     evaluator,
-    inference_data_loader,
-    model_deployer,
-    prediction_service_loader,
-    predictor,
     svc_trainer_mlflow,
     training_data_loader,
+    TrainerParams
 )
 
-from zenml.integrations.evidently.visualizers import EvidentlyVisualizer
 
 
 def main():
@@ -34,27 +28,14 @@ def main():
     # initialize and run the training pipeline
     training_pipeline_instance = training_pipeline(
         training_data_loader=training_data_loader(),
-        trainer=svc_trainer_mlflow(),
+        trainer=svc_trainer_mlflow(
+            params=TrainerParams(
+                degree=1,
+            )
+        ),
         evaluator=evaluator(),
-        deployment_trigger=deployment_trigger(),
-        model_deployer=model_deployer,
     )
     training_pipeline_instance.run()
-
-    # initialize and run the inference pipeline
-    inference_pipeline_instance = inference_pipeline(
-        inference_data_loader=inference_data_loader(),
-        prediction_service_loader=prediction_service_loader(),
-        predictor=predictor(),
-        training_data_loader=training_data_loader(),
-        drift_detector=drift_detector,
-    )
-    inference_pipeline_instance.run()
-
-    # visualize the data drift
-    inf_run = inference_pipeline_instance.get_runs()[-1]
-    drift_detection_step = inf_run.get_step(step="drift_detector")
-    EvidentlyVisualizer().visualize(drift_detection_step)
 
 
 if __name__ == "__main__":
