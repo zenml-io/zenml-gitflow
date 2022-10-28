@@ -14,6 +14,10 @@ jobs:
         KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_USERNAME }}
         KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_PASSWORD }}
         KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_NAMESPACE }}
+        ZENML_USERNAME: ${{ secrets.ZENML_USERNAME }}
+        ZENML_PASSWORD: ${{ secrets.ZENML_PASSWORD }}
+        ZENML_DEBUG: true
+        ZENML_ANALYTICS_OPT_IN: false
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -37,6 +41,10 @@ jobs:
         run: |
           zenml integration install s3 aws kubeflow sklearn mlflow evidently facets -y
 
+      - name: Connect to ZenML server
+        run: |
+          zenml connect --no-verify-ssl --url https://hamza.54.88.17.97.nip.io --username $ZENML_USERNAME --password $ZENML_PASSWORD
+
       - name: Set stack
         run: |
           zenml stack set kubeflow_gitflow_stack
@@ -45,4 +53,3 @@ jobs:
       - name: Run pipeline
         run: |
           python run.py
-
