@@ -35,7 +35,7 @@ jobs:
       - name: Setup docker
         run: |
           apt-get update
-          apt-get install \
+          apt-get -y install \
             ca-certificates \
             curl \
             gnupg \
