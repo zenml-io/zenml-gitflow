@@ -32,6 +32,15 @@ jobs:
       #   id: login-ecr
       #   uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Setup docker
+        uses: docker-practice/actions-setup-docker@master
+
+      - name: Set up AWS CLI
+      - run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
       - name: Login to Amazon ECR
         id: login-ecr
         run: |
