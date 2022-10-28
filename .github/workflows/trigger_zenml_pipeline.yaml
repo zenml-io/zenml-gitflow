@@ -15,23 +15,14 @@ jobs:
         KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_PASSWORD }}
         KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_NAMESPACE }}
     steps:
-      - id: install-aws-cli
-        uses: unfor19/install-aws-cli-action@v1.0.3
-        with:
-          version: 2     # default
-          verbose: false # default
-          arch: amd64    # allowed values: amd64, arm64
-          rootdir: ""    # defaults to "PWD"
-          workdir: ""    # defaults to "PWD/unfor19-awscli"
-
-      - id: install-kubectl
-        uses: azure/setup-kubectl@v3
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
           aws-region: eu-central-1
+
+      - id: install-kubectl
+        uses: azure/setup-kubectl@v3
 
       - name: Login to Amazon ECR Private
         id: login-ecr
@@ -42,4 +33,16 @@ jobs:
         run: |
           aws eks --region eu-central-1 update-kubeconfig --name fullvanilladeployment --alias fullvanilladeployment
 
+      - name: Install integrations
+        run: |
+          zenml integration install s3 aws kubeflow sklearn mlflow evidently facets -y
+
+      - name: Set stack
+        run: |
+          zenml stack set kubeflow_gitflow_stack
+          zenml stack up
+        
+      - name: Run pipeline
+        run: |
+          python run.py
 
