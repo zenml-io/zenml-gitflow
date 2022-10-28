@@ -30,7 +30,7 @@ def main():
         training_data_loader=training_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
-                degree=1,
+                degree=2,
             )
         ),
         evaluator=evaluator(),
