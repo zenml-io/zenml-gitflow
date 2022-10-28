@@ -17,6 +17,9 @@ jobs:
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
