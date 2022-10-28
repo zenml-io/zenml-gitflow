@@ -28,9 +28,14 @@ jobs:
       - id: install-kubectl
         uses: azure/setup-kubectl@v3
 
-      - name: Login to Amazon ECR Private
+      # - name: Login to Amazon ECR Private
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
 
       - name: Login to Amazon EKS
         id: login-eks
