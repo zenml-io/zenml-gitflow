@@ -20,6 +20,7 @@ from steps import (
     model_deployer,
     svc_trainer_mlflow,
     training_data_loader,
+    TrainerParams
 )
 
 
