@@ -65,5 +65,4 @@ jobs:
         
       - name: Run pipeline
         run: |
-          echo "Test"
-          python run.py
+          python production_run.py

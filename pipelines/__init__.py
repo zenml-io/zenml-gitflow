@@ -14,3 +14,4 @@
 
 from pipelines.inference_pipeline import inference_pipeline
 from pipelines.training_pipeline import training_pipeline
+from pipelines.prod import production_train_and_deploy_pipeline
