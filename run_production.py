@@ -19,7 +19,7 @@ from steps import (
     evaluator,
     model_deployer,
     svc_trainer_mlflow,
-    development_data_loader,
+    production_data_loader,
     TrainerParams
 )
 from utils.kubeflow_helper import get_kubeflow_settings
@@ -32,7 +32,7 @@ def main():
 
     # initialize and run the training pipeline
     training_pipeline_instance = production_train_and_deploy_pipeline(
-        importer=development_data_loader(),
+        importer=production_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
                 degree=2,
