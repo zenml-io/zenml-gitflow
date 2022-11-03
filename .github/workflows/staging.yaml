@@ -1,0 +1,70 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - main
+    
+jobs:
+  run-staging-pipeline:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_STAGING_USERNAME }}
+      KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_STAGING_PASSWORD }}
+      KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_STAGING_NAMESPACE }}
+      ZENML_USERNAME: ${{ secrets.ZENML_USERNAME }}
+      ZENML_PASSWORD: ${{ secrets.ZENML_PASSWORD }}
+      ZENML_HOST: ${{ secrets.ZENML_HOST }}
+      ZENML_DEBUG: true
+      ZENML_ANALYTICS_OPT_IN: false
+      ZENML_LOGGING_VERBOSITY: INFO
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
+          aws-region: eu-central-1
+
+      - id: install-kubectl
+        uses: azure/setup-kubectl@v3
+
+      # - name: Set up AWS CLI
+      #   run: |
+      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      #     unzip awscliv2.zip
+      #     ./aws/install
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Login to Amazon EKS
+        id: login-eks
+        run: |
+          aws eks --region eu-central-1 update-kubeconfig --name fullvanilladeployment --alias fullvanilladeployment
+
+      - name: Install zenml
+        run: |
+          pip install zenml
+
+      - name: Install integrations
+        run: |
+          zenml integration install s3 aws kubeflow sklearn mlflow evidently facets -y
+
+      - name: Connect to ZenML server
+        run: |
+          zenml connect --no-verify-ssl --url $ZENML_HOST --username $ZENML_USERNAME --password $ZENML_PASSWORD
+
+      - name: Set stack
+        run: |
+          zenml stack set kubeflow_gitflow_stack
+          zenml stack up
+        
+      - name: Run pipeline
+        run: |
+          python run_staging.py
