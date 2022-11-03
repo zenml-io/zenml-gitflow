@@ -27,15 +27,23 @@ setup_stack () {
 
   zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
 
+  zenml model-deployer register seldon_model_deployer --flavor=seldon --kubernetes_context=fullvanilladeployment  --kubenernetes_namespace=seldon-workloads --base_url=a0ffe798a9241437f969a005b2540275-728628904.eu-central-1.elb.amazonaws.com --secret=aws_seldon_secret
+
+  zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
+
   zenml stack register kubeflow_gitflow_stack \
       -a s3_store \
       -c ecr_registry \
       -o multi_tenant_kubeflow \
-      -dv evidently_validator \
+      -x aws_secrets_manager \
+      -d seldon_model_deployer \
       -e aws_mlflow_tracker || \
     msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_gitflow_stack"
 
   zenml stack set kubeflow_gitflow_stack
+
+  zenml secrets-manager secret register -s aws_seldon_secret s3-store --rclone_config_s3_env_auth=True
+
 }
 
 pre_run () {
