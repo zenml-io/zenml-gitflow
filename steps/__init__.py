@@ -12,10 +12,8 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from steps.data_loaders import inference_data_loader, training_data_loader
+from steps.data_loaders import development_data_loader
 from steps.deployment_triggers import deployment_trigger
 from steps.evaluators import evaluator
 from steps.model_deployers import model_deployer
-from steps.prediction_steps import prediction_service_loader, predictor
-from steps.trainers import svc_trainer_mlflow
-from steps.trainers import TrainerParams
+from steps.trainers import svc_trainer_mlflow, svc_trainer, TrainerParams

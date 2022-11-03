@@ -20,7 +20,6 @@ from sklearn.svm import SVC
 from zenml.client import Client
 from zenml.steps import step, BaseParameters
 
-experiment_tracker = Client().active_stack.experiment_tracker
 
 class TrainerParams(BaseParameters):
     C: int = 1.0
@@ -30,8 +29,28 @@ class TrainerParams(BaseParameters):
     shrinking: bool = True
     probability: bool = False
 
+@step
+def svc_trainer(
+    params: TrainerParams,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+) -> ClassifierMixin:
+    """Train a sklearn SVC classifier."""
+    model = SVC(
+        C=params.C,
+        kernel=params.kernel,
+        degree=params.degree,
+        coef0=params.coef0,
+        shrinking=params.shrinking,
+        probability=params.probability,
+    )
+    model.fit(X_train.to_numpy(), y_train.to_numpy())
+    train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
+    print(f"Train accuracy: {train_acc}")
+    return model
 
-@step(experiment_tracker=experiment_tracker.name)
+
+@step
 def svc_trainer_mlflow(
     params: TrainerParams,
     X_train: pd.DataFrame,

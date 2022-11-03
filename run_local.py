@@ -17,7 +17,7 @@ from pipelines import development_pipeline
 from steps import (
     evaluator,
     svc_trainer_mlflow,
-    training_data_loader,
+    development_data_loader,
     TrainerParams
 )
 
@@ -27,7 +27,7 @@ def main():
 
     # initialize and run the training pipeline
     training_pipeline_instance = development_pipeline(
-        training_data_loader=training_data_loader(),
+        importer=development_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
                 degree=2,
