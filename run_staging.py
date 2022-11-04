@@ -23,9 +23,13 @@ from steps import (
 from utils.kubeflow_helper import get_kubeflow_settings
 
 from zenml.client import Client
-
+from zenml.config import DockerSettings
 
 def main():
+
+    docker_settings = DockerSettings(
+        required_integrations=['sklearn']
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
@@ -48,7 +52,8 @@ def main():
     # Run pipeline
     training_pipeline_instance.run(
         settings={
-            "orchestrator.kubeflow": get_kubeflow_settings()
+            "orchestrator.kubeflow": get_kubeflow_settings(),
+            "docker": docker_settings,
         }
     )
 
