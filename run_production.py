@@ -17,7 +17,7 @@ from pipelines import production_train_and_deploy_pipeline
 from steps import (
     deployment_trigger,
     evaluator,
-    model_deployer,
+    sklearn_model_deployer,
     svc_trainer_mlflow,
     production_data_loader,
     TrainerParams
@@ -40,7 +40,7 @@ def main():
         ).configure(experiment_tracker=experiment_tracker.name),
         evaluator=evaluator(),
         deployment_trigger=deployment_trigger(),
-        model_deployer=model_deployer,
+        model_deployer=sklearn_model_deployer,
     )
     
     # Validate whether stack infra is ready

@@ -45,7 +45,7 @@ jobs:
       - name: Login to Amazon EKS
         id: login-eks
         run: |
-          aws eks --region eu-central-1 update-kubeconfig --name fullvanilladeployment --alias fullvanilladeployment
+          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
 
       - name: Install zenml
         run: |
@@ -53,7 +53,7 @@ jobs:
 
       - name: Install integrations
         run: |
-          zenml integration install s3 aws kubeflow sklearn mlflow facets seldon -y
+          zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
 
       - name: Connect to ZenML server
         run: |

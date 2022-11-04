@@ -12,6 +12,22 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from zenml.integrations.mlflow.steps import mlflow_model_deployer_step
+from zenml.integrations.kserve.services import KServeDeploymentConfig
+from zenml.integrations.kserve.steps import (
+    KServeDeployerStepParameters,
+    kserve_model_deployer_step,
+)
 
-model_deployer = mlflow_model_deployer_step()
+MODEL_NAME = "iris-sklearn"
+
+sklearn_model_deployer = kserve_model_deployer_step(
+    params=KServeDeployerStepParameters(
+        service_config=KServeDeploymentConfig(
+            model_name=MODEL_NAME,
+            replicas=1,
+            predictor="sklearn",
+            resources={"requests": {"cpu": "200m", "memory": "500m"}},
+        ),
+        timeout=120,
+    )
+)

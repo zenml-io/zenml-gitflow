@@ -15,5 +15,5 @@
 from steps.data_loaders import development_data_loader, production_data_loader, staging_data_loader
 from steps.deployment_triggers import deployment_trigger
 from steps.evaluators import evaluator
-from steps.model_deployers import model_deployer
+from steps.model_deployers import sklearn_model_deployer
 from steps.trainers import svc_trainer_mlflow, svc_trainer, TrainerParams

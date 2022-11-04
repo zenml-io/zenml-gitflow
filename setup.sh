@@ -19,16 +19,15 @@ setup_stack () {
     msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}mlflow_tracker"
   zenml orchestrator register multi_tenant_kubeflow \
     --flavor=kubeflow \
-    --kubernetes_context=fullvanilladeployment \
-    --kubeflow_hostname=https://www.kubeflow.zenml.io/pipeline
+    --kubernetes_context=kubeflowmultitenant \
+    --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline
 
   zenml artifact-store register s3_store -f s3 --path=s3://zenfiles|| \
     msg "${WARNING}Reusing preexisting artifact_store ${NOFORMAT}s3_store"
 
   zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
 
-  zenml model-deployer register seldon_model_deployer --flavor=seldon --kubernetes_context=fullvanilladeployment  --kubenernetes_namespace=seldon-workloads --base_url=a0ffe798a9241437f969a005b2540275-728628904.eu-central-1.elb.amazonaws.com --secret=aws_seldon_secret
-
+  zenml model-deployer register kserve_s3 --flavor=kserve --kubernetes_context=kubeflowmultitenant  --kubernetes_namespace=zenml-workloads   --base_url=$INGRESS_URL --secret=kservesecret 
   zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
 
   zenml stack register kubeflow_gitflow_stack \
@@ -36,14 +35,13 @@ setup_stack () {
       -c ecr_registry \
       -o multi_tenant_kubeflow \
       -x aws_secrets_manager \
-      -d seldon_model_deployer \
+      -d kserve_s3 \
       -e aws_mlflow_tracker || \
     msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_gitflow_stack"
 
   zenml stack set kubeflow_gitflow_stack
 
-  zenml secrets-manager secret register -s aws_seldon_secret s3-store --rclone_config_s3_env_auth=True
-
+  zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 }
 
 pre_run () {
