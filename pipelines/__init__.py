@@ -13,5 +13,5 @@
 #  permissions and limitations under the License.
 
 from pipelines.development_pipeline import development_pipeline
-from pipelines.production_pipeline import production_train_and_deploy_pipeline
+from pipelines.production_pipeline import prod_train_and_deploy_pipeline
 from pipelines.staging_pipeline import staging_train_and_deploy_pipeline

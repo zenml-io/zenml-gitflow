@@ -16,7 +16,7 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def production_train_and_deploy_pipeline(
+def prod_train_and_deploy_pipeline(
     importer,
     trainer,
     evaluator,

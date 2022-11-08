@@ -13,7 +13,7 @@
 #  permissions and limitations under the License.
 
 
-from pipelines import production_train_and_deploy_pipeline
+from pipelines import prod_train_and_deploy_pipeline
 from steps import (
     deployment_trigger,
     evaluator,
@@ -36,8 +36,7 @@ def main():
     experiment_tracker = Client().active_stack.experiment_tracker
 
     # initialize and run the training pipeline
-    training_pipeline_instance = production_train_and_deploy_pipeline(
-        name="prod_train_and_deploy_pipeline"
+    training_pipeline_instance = prod_train_and_deploy_pipeline(
         importer=production_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
