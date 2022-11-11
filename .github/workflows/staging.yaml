@@ -55,7 +55,7 @@ jobs:
 
       - name: Install integrations
         run: |
-          zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
+          zenml integration install s3 aws kubeflow sklearn mlflow facets kserve gcp -y
 
       - name: Connect to ZenML server
         run: |
