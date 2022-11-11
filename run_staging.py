@@ -28,7 +28,7 @@ from zenml.config import DockerSettings
 def main():
 
     docker_settings = DockerSettings(
-        required_integrations=['sklearn']
+        required_integrations=['sklearn', 'kserve']
     )
 
     experiment_tracker = Client().active_stack.experiment_tracker
