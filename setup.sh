@@ -45,11 +45,11 @@ setup_stack () {
 }
 
 pre_run () {
-  zenml integration install s3 aws kubeflow sklearn mlflow evidently facets
+  zenml integration install s3 aws kubeflow sklearn mlflow evidently facets kserve
 }
 
 pre_run_forced () {
-  zenml integration install s3 aws kubeflow sklearn mlflow evidently facets -y
+  zenml integration install s3 aws kubeflow sklearn mlflow evidently facets kserve -y
 }
 
 post_run () {
