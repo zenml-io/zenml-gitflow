@@ -1,1 +1,1 @@
-Run on GCP's Vertex AI, run
+Run on GCP's Vertex AI
