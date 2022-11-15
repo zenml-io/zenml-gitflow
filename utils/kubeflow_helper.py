@@ -34,13 +34,6 @@ def get_kubeflow_settings() -> dict:
             # Resolve host from active stack
             orchestrator = Client().active_stack.orchestrator
 
-            if orchestrator.flavor != "kubeflow":
-                raise AssertionError(
-                    "You can only use this function with an "
-                    "orchestrator of flavor `kubeflow` in the "
-                    "active stack!"
-                )
-
             try:
                 kubeflow_host = orchestrator.config.kubeflow_hostname
             except AttributeError:
