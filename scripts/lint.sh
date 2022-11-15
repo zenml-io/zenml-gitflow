@@ -2,14 +2,12 @@
 set -e
 set -x
 
-SRC=${1:-"run.py steps/ pipelines/"}
-NOTEBOOKS=${@:-"*.ipynb"}
+SRC=${1:-"run*.py steps/ pipelines/"}
 
 export ZENML_DEBUG=1
 export ZENML_ANALYTICS_OPT_IN=false
 flake8 $SRC
-flake8-nb $NOTEBOOKS
 autoflake --remove-all-unused-imports --recursive --remove-unused-variables --in-place $SRC --exclude=__init__.py --check
 isort $SRC scripts --check-only
-black $SRC $NOTEBOOKS --check
+black $SRC --check
 interrogate $SRC -c pyproject.toml

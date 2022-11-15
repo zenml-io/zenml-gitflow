@@ -24,4 +24,4 @@ def staging_train_and_deploy_pipeline(
     """Train, evaluate, and deploy a model."""
     X_train, X_test, y_train, y_test = importer()
     model = trainer(X_train=X_train, y_train=y_train)
-    test_acc = evaluator(X_test=X_test, y_test=y_test, model=model)
+    _ = evaluator(X_test=X_test, y_test=y_test, model=model)

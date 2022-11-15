@@ -19,7 +19,6 @@ jobs:
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
-      ZENML_STAGING_STACK: ${{ secrets.ZENML_STAGING_STACK }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -65,7 +64,7 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml stack set $ZENML_STAGING_STACK
+          zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
       - name: Run pipeline
