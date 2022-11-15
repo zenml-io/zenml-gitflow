@@ -12,7 +12,7 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-
+import os
 from zenml.client import Client
 from zenml.config import DockerSettings
 
@@ -30,7 +30,12 @@ from utils.kubeflow_helper import get_kubeflow_settings
 
 def main():
 
-    docker_settings = DockerSettings(required_integrations=["sklearn"])
+    docker_settings = DockerSettings(
+        parent_image=os.environ.get("ZENML_PROD_PIPELINE_IMAGE_NAME"),
+        copy_global_config=False,
+        copy_files=False,
+        install_stack_requirements=False
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 

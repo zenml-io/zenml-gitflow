@@ -15,6 +15,7 @@ jobs:
       ZENML_USERNAME: ${{ secrets.ZENML_USERNAME }}
       ZENML_PASSWORD: ${{ secrets.ZENML_PASSWORD }}
       ZENML_HOST: ${{ secrets.ZENML_HOST }}
+      ZENML_PROD_PIPELINE_IMAGE_NAME: ${{ secrets.ZENML_PROD_PIPELINE_IMAGE_NAME }}
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
@@ -64,6 +65,14 @@ jobs:
           zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
+      - name: Build image
+        run: |
+          docker build -f Dockerfile . -t $ZENML_PROD_PIPELINE_IMAGE_NAME --build-arg ZENML_HOST=$ZENML_HOST --build-arg ZENML_USERNAME=$ZENML_USERNAME  --build-arg ZENML_PASSWORD=$ZENML_PASSWORD
+
+      - name: Push image
+        run: |
+          docker push $ZENML_PROD_PIPELINE_IMAGE_NAME
+
       - name: Run pipeline
         run: |
           python run_production.py
