@@ -65,6 +65,10 @@ jobs:
           zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
+      - name: Pull previos image for caching
+        run: |
+          docker pull $ZENML_PROD_PIPELINE_IMAGE_NAME
+
       - name: Build image
         run: |
           docker build -f Dockerfile . -t $ZENML_PROD_PIPELINE_IMAGE_NAME --build-arg ZENML_HOST=$ZENML_HOST --build-arg ZENML_USERNAME=$ZENML_USERNAME  --build-arg ZENML_PASSWORD=$ZENML_PASSWORD
