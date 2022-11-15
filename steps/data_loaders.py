@@ -16,7 +16,31 @@ import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from zenml.steps import Output, step
+import requests
 
+
+def download_dataframe(
+    bucket: str = "zenmlpublicdata",
+    env: str = "staging",
+    df_name: str = "X_train",
+    df_type: str = "dataframe",
+    
+) -> pd.DataFrame:
+    url = f'https://{bucket}.s3.eu-central-1.amazonaws.com/{env}/{df_name}/df.parquet.gzip'
+    r = requests.get(url, allow_redirects=True)
+
+    with open('df.parquet.gzip', 'wb') as f:
+        f.write(r.content)
+    
+    with open('df.parquet.gzip', 'rb') as f:
+        df = pd.read_parquet(f)
+
+    if df_type == "series":
+        # Taking the first column if its a series as the assumption
+        # is that there will only be one
+        df = df[df.columns[0]]
+
+    return df
 
 @step
 def development_data_loader() -> Output(
@@ -25,7 +49,7 @@ def development_data_loader() -> Output(
     y_train=pd.Series,
     y_test=pd.Series,
 ):
-    """Load the iris dataset as tuple of Pandas DataFrame / Series."""
+    """Load the local dataset."""
     iris = load_iris(as_frame=True)
     X_train, X_test, y_train, y_test = train_test_split(
         iris.data, iris.target, test_size=0.2, shuffle=True, random_state=42
@@ -40,11 +64,12 @@ def staging_data_loader() -> Output(
     y_train=pd.Series,
     y_test=pd.Series,
 ):
-    """Load the iris dataset as tuple of Pandas DataFrame / Series."""
-    iris = load_iris(as_frame=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, shuffle=True, random_state=42
-    )
+    """Load the static staging dataset."""
+    X_train = download_dataframe(env="staging", df_name="X_train")
+    X_test = download_dataframe(env="staging", df_name="X_test")
+    y_train = download_dataframe(env="staging", df_name="y_train", df_type="series")
+    y_test = download_dataframe(env="staging", df_name="y_test", df_type="series")
+
     return X_train, X_test, y_train, y_test
 
 
@@ -55,9 +80,10 @@ def production_data_loader() -> Output(
     y_train=pd.Series,
     y_test=pd.Series,
 ):
-    """Load the iris dataset as tuple of Pandas DataFrame / Series."""
-    iris = load_iris(as_frame=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, shuffle=True, random_state=42
-    )
+    """Load the production production dataset."""
+    X_train = download_dataframe(env="production", df_name="X_train")
+    X_test = download_dataframe(env="production", df_name="X_test")
+    y_train = download_dataframe(env="production", df_name="y_train", df_type="series")
+    y_test = download_dataframe(env="production", df_name="y_test", df_type="series")
+
     return X_train, X_test, y_train, y_test
