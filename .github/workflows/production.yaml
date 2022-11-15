@@ -16,7 +16,7 @@ jobs:
       ZENML_PASSWORD: ${{ secrets.ZENML_PASSWORD }}
       ZENML_HOST: ${{ secrets.ZENML_HOST }}
       ZENML_DEBUG: true
-      ZENML_ANALYTICS_OPT_IN: false
+      ZENML_ANALYTICS_OPT_IN: true
       ZENML_LOGGING_VERBOSITY: INFO
     steps:
       - name: Check out repository code
@@ -31,11 +31,9 @@ jobs:
       - id: install-kubectl
         uses: azure/setup-kubectl@v3
 
-      # - name: Set up AWS CLI
-      #   run: |
-      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      #     unzip awscliv2.zip
-      #     ./aws/install
+      - name: Print debug env
+        run: |
+          python -c "import zenml.environment; print(zenml.environment.get_system_details())"
 
       - name: Login to Amazon ECR
         id: login-ecr
