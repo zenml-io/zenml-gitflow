@@ -15,11 +15,12 @@
 
 from pipelines import development_pipeline
 from steps import (
-    TrainerParams,
-    development_data_loader,
     evaluator,
     svc_trainer_mlflow,
+    development_data_loader,
+    TrainerParams
 )
+
 
 
 def main():

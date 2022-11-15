@@ -13,22 +13,23 @@
 #  permissions and limitations under the License.
 
 
-from zenml.client import Client
-from zenml.config import DockerSettings
-
 from pipelines import staging_train_and_deploy_pipeline
 from steps import (
-    TrainerParams,
     evaluator,
-    staging_data_loader,
     svc_trainer_mlflow,
+    staging_data_loader,
+    TrainerParams
 )
 from utils.kubeflow_helper import get_kubeflow_settings
 
+from zenml.client import Client
+from zenml.config import DockerSettings
 
 def main():
 
-    docker_settings = DockerSettings(required_integrations=["sklearn"])
+    docker_settings = DockerSettings(
+        required_integrations=['sklearn']
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
@@ -42,10 +43,12 @@ def main():
         ).configure(experiment_tracker=experiment_tracker.name),
         evaluator=evaluator(),
     )
-
+    
     # Validate whether stack infra is ready
-    Client().active_stack.validate(fail_if_secrets_missing=True)
-
+    Client().active_stack.validate(
+        fail_if_secrets_missing=True
+    )
+    
     # Run pipeline
     training_pipeline_instance.run(
         settings={

@@ -16,17 +16,18 @@ import mlflow
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.steps import BaseParameters, step
+
+from zenml.client import Client
+from zenml.steps import step, BaseParameters
 
 
 class TrainerParams(BaseParameters):
     C: int = 1.0
-    kernel: str = "rbf"
+    kernel: str ="rbf"
     degree: int = 3
     coef0: float = 0.0
     shrinking: bool = True
     probability: bool = False
-
 
 @step
 def svc_trainer(
