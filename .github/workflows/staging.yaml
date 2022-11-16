@@ -59,6 +59,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Install staging requirements
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        run: |
+          pip install gcsfs google-cloud-secret-manager google-cloud-aiplatform>=1.11.0
+
       - name: Install google-auth 2.13.0
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
