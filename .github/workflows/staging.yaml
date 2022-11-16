@@ -73,7 +73,7 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml stack set vertex_gcp_stack
+          zenml stack set vertex_gitflow_stack
           zenml stack up
         
       - name: Pull previous image for caching

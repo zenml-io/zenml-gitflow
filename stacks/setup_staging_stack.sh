@@ -7,7 +7,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=~/.ssh/google-demos.json
 gcloud auth configure-docker --project zenml-demos 
 
 zenml secrets-manager register gcp_secrets_manager --flavor=gcp --project_id=zenml-demos
-zenml experiment-tracker register gcp_mlflow_tracker  --flavor=mlflow --tracking_insecure_tls=false --tracking_uri="http://35.246.148.181/mlflow/" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" 
+zenml experiment-tracker register gcp_mlflow_tracker  --flavor=mlflow --tracking_insecure_tls=true --tracking_uri="http://35.246.148.181/mlflow/" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" 
 zenml orchestrator register vertex_ai_orchestrator \
   --flavor=vertex \
   --project=zenml-demos \
