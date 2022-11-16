@@ -12,8 +12,7 @@ zenml orchestrator register vertex_ai_orchestrator \
   --flavor=vertex \
   --project=zenml-demos \
   --location=europe-west3 \
-  --workload_service_account=ing-zenmlsa-ing@zenml-demos.iam.gserviceaccount.com \
-  --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline
+  --workload_service_account=ing-zenmlsa-ing@zenml-demos.iam.gserviceaccount.com
 
 zenml artifact-store register gcp_store -f gcp --path=gs://ing-store
 
@@ -28,7 +27,7 @@ zenml stack register vertex_gitflow_stack \
   msg "${WARNING}Reusing preexisting stack ${NOFORMAT}vertex_gitflow_stack"
 
 zenml stack set vertex_gitflow_stack
-zenml stack share vertex_gitflow_stack -r
+zenml stack share vertex_gitflow_stack
 
 echo "In the following prompt, please set the `tracking_username` key with value of your MLflow username and `tracking_password` key with value of your MLflow password. "
 zenml secrets-manager secret register mlflow_secret -i  # set tracking_username and tracking_password
