@@ -40,7 +40,7 @@ def main():
         importer=staging_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
-                degree=1,
+                degree=2,
             )
         ).configure(experiment_tracker=experiment_tracker.name),
         evaluator=evaluator(),
