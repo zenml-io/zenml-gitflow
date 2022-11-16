@@ -109,6 +109,6 @@ pip install -r requirements.txt
 python run_local.py
 ```
 
-4. Make changes in a branch and create a PR to `main`: Will trigger a run in staging GCP Vertex.
+4. Make changes in a branch and create a PR to `main`: Will trigger a run in staging GCP Vertex!
 
-5. Merge to `main` after staging github action is completed: Will trigger a run in production AWS Kubeflow.
+5. Merge to `main` after staging github action is completed: Will trigger a run in production AWS Kubeflow!
