@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://zenml.io">
-    <img src="assets/zenml_logo.png" alt="Logo" width="400">
+    <img src="_assets/zenml_logo.png" alt="Logo" width="400">
   </a>
 
   <h3 align="center">Build portable, production-ready MLOps pipelines.</h3>
@@ -51,15 +51,17 @@ The workflow works as follows:
 
 A data scientist wants to make improvements to the ML pipeline. They clone the repository, create a new branch, and experiment with new models or data processing steps on their local machine.
 
-![Pipeline with local stack](assets/pipeline_local.png)
+<img src="_assets/pipeline_local.png" alt="Pipeline with local stack" width="500"/>
+
 
 Once the data scientist thinks they have improved the pipeline, they create a pull request for his branch on GitHub. This automatically triggers a GitHub Action that will run the same pipeline in the staging environment (e.g. a pipeline running on GCP Vertex AI), potentially with different test data. As long as the pipeline does not run successfully in the staging environment, the PR cannot be merged.
 
-![Pipeline with staging stack](assets/pipeline_staging.png)
+<img src="_assets/pipeline_staging.png" alt="Pipeline with staging stack" width="500"/>
+
 
 Once the PR has been reviewed and passes all checks, the branch is merged into develop. This automatically triggers another GitHub Action that now runs a pipeline in the production environment, which trains the same model on production data, and then automatically deploys it.
 
-![Pipeline with prod stack](assets/pipeline_prod.png)
+<img src="_assets/pipeline_prod.png" alt="Pipeline with stprodaging stack" width="500"/>
 
 ## 👀 Secrets
 
