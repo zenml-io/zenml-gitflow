@@ -49,20 +49,20 @@ jobs:
           aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
 
       - name: Load cached venv
-        id: cached-python-and-docker-files
+        id: cache
         uses: actions/cache@v2.1.6
         with:
-          path: |
-            /usr/lib/python3/dist-packages
-            /var/lib/docker
+          path: ~/.cache/pip
           # Cache the python dist_packages and the docker files to speed up this action
           key: ${{ hashFiles('.zenml_integration_requirements') }}
 
       - name: Install zenml
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           pip install zenml
 
       - name: Install integrations
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
 
