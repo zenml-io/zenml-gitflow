@@ -35,7 +35,7 @@ def main():
         importer=development_data_loader(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
-                degree=6,
+                degree=7,
             )
         ).configure(experiment_tracker=experiment_tracker.name),
         evaluator=evaluator(),
