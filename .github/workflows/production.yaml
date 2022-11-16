@@ -42,13 +42,19 @@ jobs:
         run: |
           aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
 
-      - name: Load cached venv
-        id: cache
-        uses: actions/cache@v2.1.6
+      # - name: Load cached venv
+      #   id: cache
+      #   uses: actions/cache@v2.1.6
+      #   with:
+      #     path: ~/.cache/pip
+      #     # Cache the python dist_packages and the docker files to speed up this action
+      #     key: ${{ hashFiles('.zenml_integration_requirements') }}
+
+      - uses: actions/setup-python@v4
         with:
-          path: ~/.cache/pip
-          # Cache the python dist_packages and the docker files to speed up this action
-          key: ${{ hashFiles('.zenml_integration_requirements') }}
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
+          cache-dependency-path: '.zenml_integration_requirements'
 
       - name: Install zenml
         if: steps.cache.outputs.cache-hit != 'true'
