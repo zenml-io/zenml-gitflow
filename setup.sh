@@ -5,17 +5,19 @@ set -Eeo pipefail
 setup_stack () {
   zenml experiment-tracker register mlflow_tracker  --flavor=mlflow || \
     msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}mlflow_tracker"
-  zenml data-validator register evidently_validator --flavor=evidently
   zenml stack register local_gitflow_stack \
       -a default \
       -o default \
-      -dv evidently_validator \
       -e mlflow_tracker || \
     msg "${WARNING}Reusing preexisting stack ${NOFORMAT}local_gitflow_stack"
 
   zenml stack set local_gitflow_stack
 
-  zenml experiment-tracker register aws_mlflow_tracker  --flavor=mlflow --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" --tracking_username="admin" --tracking_password="zenml" || \
+  zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
+  zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
+  zenml secrets-manager secret register mlflow_secret -i
+
+  zenml experiment-tracker register aws_mlflow_tracker  --flavor=mlflow --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" || \
     msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}mlflow_tracker"
   zenml orchestrator register multi_tenant_kubeflow \
     --flavor=kubeflow \
@@ -28,7 +30,6 @@ setup_stack () {
   zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
 
   zenml model-deployer register kserve_s3 --flavor=kserve --kubernetes_context=kubeflowmultitenant  --kubernetes_namespace=zenml-workloads   --base_url=$INGRESS_URL --secret=kservesecret 
-  zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
 
   zenml stack register kubeflow_gitflow_stack \
       -a s3_store \
@@ -41,7 +42,6 @@ setup_stack () {
 
   zenml stack set kubeflow_gitflow_stack
 
-  zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 }
 
 pre_run () {

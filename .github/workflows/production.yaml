@@ -49,22 +49,17 @@ jobs:
       - uses: syphar/restore-virtualenv@v1
         id: cache-virtualenv
         with:
-          requirement_files: '.zenml_integration_requirements'
+          requirement_files: 'requirements.txt'
 
       - uses: syphar/restore-pip-download-cache@v1
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         with:
-          requirement_files: '.zenml_integration_requirements'
-
-      - name: Install zenml
+          requirement_files: 'requirements.txt'
+          
+      - name: Install requirements
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
-          pip install zenml
-
-      - name: Install integrations
-        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
-        run: |
-          zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
+          pip install -r requirements.txt
 
       - name: Connect to ZenML server
         run: |
@@ -75,7 +70,7 @@ jobs:
           zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
-      - name: Pull previos image for caching
+      - name: Pull previous image for caching
         run: |
           docker pull $ZENML_PROD_PIPELINE_IMAGE_NAME
 

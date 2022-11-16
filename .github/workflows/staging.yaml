@@ -8,8 +8,7 @@ jobs:
   run-staging-pipeline:
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_STAGING_USERNAME }}
       KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_STAGING_PASSWORD }}
       KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_STAGING_NAMESPACE }}
@@ -19,52 +18,56 @@ jobs:
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
+      ZENML_STAGING_PIPELINE_IMAGE_NAME: ${{ secrets.ZENML_STAGING_PIPELINE_IMAGE_NAME }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
         with:
-          role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
-          aws-region: eu-central-1
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+        
       - id: install-kubectl
         uses: azure/setup-kubectl@v3
 
-      # - name: Set up AWS CLI
-      #   run: |
-      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      #     unzip awscliv2.zip
-      #     ./aws/install
-
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Authenticate docker
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
-
-      - name: Login to Amazon EKS
-        id: login-eks
-        run: |
-          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
-
-      - name: Load cached venv
-        id: cache
-        uses: actions/cache@v2.1.6
+          gcloud auth configure-docker --project zenml-demos
+      - uses: actions/setup-python@v4
         with:
-          path: ~/.cache/pip
-          # Cache the python dist_packages and the docker files to speed up this action
-          key: ${{ hashFiles('.zenml_integration_requirements') }}
+          python-version: '3.9'
 
-      - name: Install zenml
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          pip install zenml
+      - uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+        with:
+          requirement_files: 'requirements.txt'
 
-      - name: Install integrations
-        if: steps.cache.outputs.cache-hit != 'true'
+      - uses: syphar/restore-pip-download-cache@v1
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        with:
+          requirement_files: 'requirements.txt'
+
+      - uses: syphar/restore-pip-download-cache@v1
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        with:
+          requirement_files: 'requirements.txt'
+          
+      - name: Install requirements
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
-          zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
+          pip install -r requirements.txt
+
+      - name: Install google-auth 2.13.0
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        run: |
+          pip install google-auth==2.13.0
 
       - name: Connect to ZenML server
         run: |
@@ -72,9 +75,13 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml stack set kubeflow_gitflow_stack
+          zenml stack set vertex_gcp_stack
           zenml stack up
         
+      - name: Pull previous image for caching
+        run: |
+          docker pull $ZENML_STAGING_PIPELINE_IMAGE_NAME
+
       - name: Run pipeline
         run: |
           python run_staging.py
