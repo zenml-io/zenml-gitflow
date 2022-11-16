@@ -53,6 +53,8 @@ jobs:
 
       - uses: syphar/restore-pip-download-cache@v1
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        with:
+          requirement_files: '.zenml_integration_requirements'
 
       - name: Install zenml
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
