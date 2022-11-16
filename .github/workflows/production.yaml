@@ -57,12 +57,10 @@ jobs:
           cache-dependency-path: '.zenml_integration_requirements'
 
       - name: Install zenml
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           pip install zenml
 
       - name: Install integrations
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           zenml integration install s3 aws kubeflow sklearn mlflow facets kserve -y
 
