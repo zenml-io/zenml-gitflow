@@ -43,6 +43,8 @@
   </p>
 </div>
 
+## 🖼️ Overview
+
 This repository showcases how ZenML can be used with a Git for machine learning CI/CD. This allows data scientists to automatically test their models on staging and deploy to production.
 
 The workflow works as follows:
@@ -58,3 +60,55 @@ Once the data scientist thinks they have improved the pipeline, they create a pu
 Once the PR has been reviewed and passes all checks, the branch is merged into develop. This automatically triggers another GitHub Action that now runs a pipeline in the production environment, which trains the same model on production data, and then automatically deploys it.
 
 ![Pipeline with prod stack](assets/pipeline_prod.png)
+
+## 👀 Secrets
+
+In order to run this repository, the following secrets need to be set in the repository:
+
+```shell
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+GCP_CREDENTIALS
+KUBEFLOW_NAMESPACE
+KUBEFLOW_PASSWORD
+KUBEFLOW_PRODUCTION_NAMESPACE
+KUBEFLOW_PRODUCTION_PASSWORD
+KUBEFLOW_PRODUCTION_USERNAME
+KUBEFLOW_USERNAME
+ZENML_HOST
+ZENML_PASSWORD
+ZENML_PROD_PIPELINE_IMAGE_NAME
+ZENML_STAGING_PIPELINE_IMAGE_NAME
+ZENML_USERNAME
+
+# Currently not used but WIP
+KUBEFLOW_STAGING_NAMESPACE
+KUBEFLOW_STAGING_PASSWORD
+KUBEFLOW_STAGING_USERNAME
+ZENML_PRODUCTION_STACK
+ZENML_STAGING_STACK
+```
+
+## 🏇 How to run
+
+1. Clone the repository
+
+```
+git clone git@github.com:zenml-io/zenml-gitflow.git
+```
+
+2. Install requirements
+
+```
+pip install -r requirements.txt
+```
+
+3. Run pipeline locally
+
+```
+python run_local.py
+```
+
+4. Make changes in a branch and create a PR to `main`: Will trigger a run in staging GCP Vertex.
+
+5. Merge to `main` after staging github action is completed: Will trigger a run in production AWS Kubeflow.

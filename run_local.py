@@ -20,10 +20,16 @@ from steps import (
     evaluator,
     svc_trainer_mlflow,
 )
+from zenml.client import Client
 
 
 def main():
 
+    experiment_tracker = Client().active_stack.experiment_tracker
+
+    if experiment_tracker is None:
+        raise AssertionError("Experiment Tracker needs to exist in the  stack!")
+    
     # initialize and run the training pipeline
     training_pipeline_instance = development_pipeline(
         importer=development_data_loader(),
@@ -31,7 +37,7 @@ def main():
             params=TrainerParams(
                 degree=6,
             )
-        ),
+        ).configure(experiment_tracker=experiment_tracker.name),
         evaluator=evaluator(),
     )
     training_pipeline_instance.run()

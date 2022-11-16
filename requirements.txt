@@ -8,8 +8,8 @@ s3fs==2022.3.0
 sagemaker==2.82.2
 scikit-learn
 torch-model-archiver
-google-auth==2.13.0
+# google-auth==2.13.0
 gcsfs
 google-cloud-secret-manager
 google-cloud-aiplatform>=1.11.0
-zenml==0.20.1
+git+https://github.com/zenml-io/zenml.git@bugfix/ENG-1458-fix-sync-issues

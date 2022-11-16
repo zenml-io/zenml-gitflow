@@ -32,6 +32,9 @@ def main():
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
+    if experiment_tracker is None:
+        raise AssertionError("Experiment Tracker needs to exist in the  stack!")
+    
     # initialize and run the training pipeline
     training_pipeline_instance = staging_train_and_deploy_pipeline(
         importer=staging_data_loader(),
