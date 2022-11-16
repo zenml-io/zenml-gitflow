@@ -20,7 +20,7 @@ from zenml.steps import BaseParameters, step
 
 
 class TrainerParams(BaseParameters):
-    C: int = 1.0
+    C: int = 1.72
     kernel: str = "rbf"
     degree: int = 3
     coef0: float = 0.0
