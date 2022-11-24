@@ -21,3 +21,5 @@ from steps.deployment_triggers import deployment_trigger
 from steps.evaluators import evaluator
 from steps.model_deployers import sklearn_model_deployer
 from steps.trainers import TrainerParams, svc_trainer, svc_trainer_mlflow
+from steps.evidently_data_validator import evidently_data_validator
+from steps.deepchecks_data_validator import deepchecks_data_validator
