@@ -15,7 +15,12 @@ import pandas as pd
 from deepchecks.core.suite import SuiteResult
 from zenml.integrations.deepchecks.data_validators import DeepchecksDataValidator
 from zenml.integrations.deepchecks.validation_checks import DeepchecksDataIntegrityCheck
-from zenml.steps import step
+from evidently.model_profile import Profile
+from evidently.dashboard import Dashboard
+from evidently.model_profile.sections import DataQualityProfileSection
+from evidently.pipeline.column_mapping import ColumnMapping
+from evidently.tabs import DataQualityTab
+from zenml.steps import step, Output
 
 
 @step
@@ -45,3 +50,29 @@ def deepchecks_data_validator(
     # validation post-processing (e.g. interpret results, take actions) can happen here
 
     return suite
+
+
+@step
+def evidently_data_validator(
+    dataset: pd.DataFrame,
+) -> Output(profile=Profile, dashboard=str):
+    """Custom data quality profiler step with Evidently
+
+    Args:
+        dataset: a Pandas DataFrame
+
+    Returns:
+        Evidently Profile generated for the dataset
+    """
+
+    # validation pre-processing (e.g. dataset preparation) can take place here
+    profile = Profile(sections=[DataQualityProfileSection()])
+    profile.calculate(
+        reference_data=dataset,
+    )
+    dashboard = Dashboard(tabs=[DataQualityTab()])
+    dashboard.calculate(dataset)
+    
+    # validation post-processing (e.g. interpret results, take actions) can happen here
+
+    return [profile, dashboard.html()]
