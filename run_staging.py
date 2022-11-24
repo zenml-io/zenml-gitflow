@@ -31,6 +31,7 @@ def main():
 
     docker_settings = DockerSettings(
         required_integrations=["sklearn", "kserve", "deepchecks", "mlflow"],
+        requirements=["pandas==1.4.0"],
         dockerfile="deepchecks-zenml.Dockerfile",
         build_options={
             "buildargs": {

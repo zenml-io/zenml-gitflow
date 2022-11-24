@@ -31,7 +31,10 @@ from utils.kubeflow_helper import get_kubeflow_settings
 
 def main():
 
-    docker_settings = DockerSettings(required_integrations=["sklearn", "kserve", "mlflow", "evidently"])
+    docker_settings = DockerSettings(
+        required_integrations=["sklearn", "kserve", "mlflow", "evidently"],
+        requirements=["pandas==1.4.0"],
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
