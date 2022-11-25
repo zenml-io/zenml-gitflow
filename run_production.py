@@ -24,8 +24,8 @@ from steps import (
     production_data_loader,
     sklearn_model_deployer,
     svc_trainer_mlflow,
-    evidently_data_validator,
 )
+from steps.evidently_data_validator import evidently_data_validator
 from utils.kubeflow_helper import get_kubeflow_settings
 
 

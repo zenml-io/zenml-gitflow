@@ -22,8 +22,8 @@ from steps import (
     evaluator,
     staging_data_loader,
     svc_trainer_mlflow,
-    evidently_data_validator
 )
+from steps.deepchecks_data_validators import deepchecks_data_validator
 from utils.kubeflow_helper import get_kubeflow_settings
 
 
@@ -48,7 +48,7 @@ def main():
     # initialize and run the training pipeline
     training_pipeline_instance = staging_train_and_deploy_pipeline(
         importer=staging_data_loader(),
-        data_validator=evidently_data_validator(),
+        data_validator=deepchecks_data_validator(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
                 degree=1,
