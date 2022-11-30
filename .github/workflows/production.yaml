@@ -67,6 +67,7 @@ jobs:
 
       - name: Set stack
         run: |
+          zenml connect --no-verify-ssl --url $ZENML_HOST --username $ZENML_USERNAME --password $ZENML_PASSWORD
           zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
