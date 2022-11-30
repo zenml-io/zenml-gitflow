@@ -1,0 +1,33 @@
+components:
+  artifact_store:
+    configuration: {}
+    flavor: local
+    id: 6e7377a8-1217-4502-a8be-c403d8e0c244
+    is_shared: false
+    name: default
+    type: artifact_store
+    user: ef96e7a2-829b-43c6-b01b-3b9e9f8a3808
+  experiment_tracker:
+    configuration:
+      databricks_host: null
+      tracking_insecure_tls: false
+      tracking_password: null
+      tracking_token: null
+      tracking_uri: null
+      tracking_username: null
+    flavor: mlflow
+    id: cca599ff-331e-4a07-bce6-4ffebdab6da6
+    is_shared: false
+    name: local_mlflow_tracker
+    type: experiment_tracker
+    user: ef96e7a2-829b-43c6-b01b-3b9e9f8a3808
+  orchestrator:
+    configuration: {}
+    flavor: local
+    id: 9ae53397-f4a4-48cf-8efa-6aa1c7039682
+    is_shared: false
+    name: default
+    type: orchestrator
+    user: ef96e7a2-829b-43c6-b01b-3b9e9f8a3808
+stack_name: local_gitflow_stack
+zenml_version: 0.21.1

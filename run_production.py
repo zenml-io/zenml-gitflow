@@ -25,12 +25,16 @@ from steps import (
     sklearn_model_deployer,
     svc_trainer_mlflow,
 )
+from steps.evidently_data_validator import evidently_data_validator
 from utils.kubeflow_helper import get_kubeflow_settings
 
 
 def main():
 
-    docker_settings = DockerSettings(required_integrations=["sklearn", "kserve", "mlflow"])
+    docker_settings = DockerSettings(
+        required_integrations=["sklearn", "kserve", "mlflow", "evidently"],
+        requirements=["pandas==1.4.0"],
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
@@ -40,6 +44,7 @@ def main():
     # initialize and run the training pipeline
     training_pipeline_instance = prod_train_and_deploy_pipeline(
         importer=production_data_loader(),
+        data_validator=evidently_data_validator(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
                 degree=1,

@@ -12,7 +12,7 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-
+import zenml
 from zenml.client import Client
 from zenml.config import DockerSettings
 
@@ -23,12 +23,22 @@ from steps import (
     staging_data_loader,
     svc_trainer_mlflow,
 )
+from steps.deepchecks_data_validators import deepchecks_data_validator
 from utils.kubeflow_helper import get_kubeflow_settings
 
 
 def main():
 
-    docker_settings = DockerSettings(required_integrations=["sklearn", "kserve", "mlflow"])
+    docker_settings = DockerSettings(
+        required_integrations=["sklearn", "kserve", "deepchecks", "mlflow"],
+        requirements=["pandas==1.4.0"],
+        dockerfile="deepchecks-zenml.Dockerfile",
+        build_options={
+            "buildargs": {
+                "ZENML_VERSION": f"{zenml.__version__}"
+            },
+        },
+    )
 
     experiment_tracker = Client().active_stack.experiment_tracker
 
@@ -38,6 +48,7 @@ def main():
     # initialize and run the training pipeline
     training_pipeline_instance = staging_train_and_deploy_pipeline(
         importer=staging_data_loader(),
+        data_validator=deepchecks_data_validator(),
         trainer=svc_trainer_mlflow(
             params=TrainerParams(
                 degree=1,
