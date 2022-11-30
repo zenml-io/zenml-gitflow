@@ -10,4 +10,4 @@ scikit-learn
 torch-model-archiver
 itsdangerous==2.0.1
 werkzeug==2.0.3
-git+https://github.com/zenml-io/zenml.git@bugfix/ENG-1458-fix-sync-issues
+zenml==0.22.0

@@ -67,5 +67,5 @@ def svc_trainer_mlflow(
     )
     model.fit(X_train.to_numpy(), y_train.to_numpy())
     train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
-    print(f"Train accuracy wow!: {train_acc}")
+    print(f"Train accuracy!: {train_acc}")
     return model
