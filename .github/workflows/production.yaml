@@ -40,7 +40,7 @@ jobs:
       - name: Login to Amazon EKS
         id: login-eks
         run: |
-          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
+          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias zenml-eks
 
       - uses: actions/setup-python@v4
         with:
@@ -67,7 +67,6 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml connect --no-verify-ssl --url $ZENML_HOST --username $ZENML_USERNAME --password $ZENML_PASSWORD
           zenml stack set kubeflow_gitflow_stack
           zenml stack up
         
