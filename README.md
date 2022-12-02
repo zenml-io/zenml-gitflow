@@ -45,9 +45,13 @@
 
 ## 🖼️ Overview
 
-This repository showcases how ZenML can be used with a Git for machine learning
-CI/CD. This allows data scientists to automatically test their models on staging 
-and deploy to production.
+This repository showcases how ZenML can be used for machine learning with a Git 
+Ops workflow. This allows data scientists to automatically test their models on 
+staging and deploy to production. Here's an architecture diagram of what this 
+can look like:
+
+<img src="_assets/pipeline_architecture.png" alt="Pipeline being run on staging/production stack through ci/cd" width="800"/>
+
 
 The workflow works as follows:
 
@@ -65,12 +69,14 @@ running on GCP Vertex AI), potentially with different test data. As long as the
 pipeline does not run successfully in the staging environment, the PR cannot be 
 merged.
 
+<img src="_assets/pipeline_staging.png" alt="Pipeline with staging stack" width="500"/>
+
 Once the PR has been reviewed and passes all checks, the branch is merged into 
 develop. This automatically triggers another GitHub Action that now runs a 
 pipeline in the production environment, which trains the same model on 
 production data, and then automatically deploys it.
 
-<img src="_assets/pipeline_prod.png" alt="Pipeline being run on staging/production stack through ci/cd" width="800"/>
+<img src="_assets/pipeline_prod.png" alt="Pipeline with production stack" width="500"/>
 
 ## 👀 Secrets
 
