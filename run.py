@@ -68,7 +68,7 @@ def main(stage: str = "local"):
         # initialize the staging pipeline with a new data loader        
         docker_settings = DockerSettings(
             required_integrations=["sklearn", "mlflow"],
-            requirements=["pandas==1.4.0", "parquet==1.3.1"],
+            requirements=["parquet==1.3.1"],
             build_options={
                 "buildargs": {
                     "ZENML_VERSION": f"{zenml.__version__}"
@@ -98,7 +98,7 @@ def main(stage: str = "local"):
         # docker settings for production
         docker_settings = DockerSettings(
             required_integrations=["sklearn", "kserve", "mlflow"],
-            requirements=["pandas==1.4.0", "parquet==1.3.1"],
+            requirements=["parquet==1.3.1"],
         )
         
         # initialize and run the training pipeline in production
