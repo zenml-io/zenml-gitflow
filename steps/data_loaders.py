@@ -31,7 +31,7 @@ def download_dataframe(
 
     with open('df.parquet.gzip', 'wb') as f:
         f.write(r.content)
-    
+
     with open('df.parquet.gzip', 'rb') as f:
         df = pd.read_parquet(f)
 

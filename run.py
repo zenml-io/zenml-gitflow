@@ -22,14 +22,17 @@ from pipelines import (
     staging_train_and_deploy_pipeline,
     prod_train_and_deploy_pipeline
 )
-from steps import (
-    TrainerParams,
+
+from steps.data_loaders import (
     development_data_loader,
-    evaluator,
-    svc_trainer_mlflow,
+    production_data_loader,
+    staging_data_loader,
 )
+from steps.evaluators import evaluator
+from steps.trainers import TrainerParams, svc_trainer_mlflow
 
 from utils.kubeflow_helper import get_kubeflow_settings
+
 
 def main(stage: str = "local"):
     """Main runner for all three pipelines.
@@ -62,8 +65,7 @@ def main(stage: str = "local"):
         )
 
     elif stage == "staging":
-        from steps import staging_data_loader
-        
+        # initialize the staging pipeline with a new data loader        
         docker_settings = DockerSettings(
             required_integrations=["sklearn", "mlflow"],
             requirements=["pandas==1.4.0"],
@@ -74,7 +76,6 @@ def main(stage: str = "local"):
             },
         )
         
-        # initialize and run the training pipeline
         training_pipeline_instance = staging_train_and_deploy_pipeline(
             importer=staging_data_loader(),
             trainer=svc_trainer_mlflow(
@@ -91,11 +92,8 @@ def main(stage: str = "local"):
         }
 
     elif stage == "production":
-        from steps import (
-            production_data_loader,
-            sklearn_model_deployer,
-            deployment_trigger
-        )
+        from steps.deployment_triggers import deployment_trigger
+        from steps.model_deployers import sklearn_model_deployer
         
         # docker settings for production
         docker_settings = DockerSettings(
@@ -103,7 +101,7 @@ def main(stage: str = "local"):
             requirements=["pandas==1.4.0"],
         )
         
-        # initialize and run the training pipeline
+        # initialize and run the training pipeline in production
         training_pipeline_instance = prod_train_and_deploy_pipeline(
             importer=production_data_loader(),
             trainer=svc_trainer_mlflow(
