@@ -43,6 +43,7 @@
   </p>
 </div>
 
+
 ## 🖼️ Overview
 
 This repository showcases how ZenML can be used for machine learning with a Git 
@@ -78,7 +79,9 @@ production data, and then automatically deploys it.
 
 <img src="_assets/pipeline_prod.png" alt="Pipeline with production stack" width="500"/>
 
-## 👀 Secrets
+
+
+## 👀 Set up
 
 In order to run this repository, the following secrets need to be set in the repository:
 
@@ -129,3 +132,4 @@ python run_local.py
 4. Make changes in a branch and create a PR to `main`: Will trigger a run in staging GCP Vertex!
 
 5. Merge to `main` after staging github action is completed: Will trigger a run in production AWS Kubeflow!
+
