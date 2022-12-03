@@ -126,7 +126,7 @@ pip install -r requirements.txt
 3. Run pipeline locally
 
 ```
-python run_local.py
+python run.py
 ```
 
 4. Make changes in a branch and create a PR to `main`: Will trigger a run in staging GCP Vertex!

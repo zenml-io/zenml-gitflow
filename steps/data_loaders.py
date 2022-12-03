@@ -26,14 +26,15 @@ def download_dataframe(
     df_type: str = "dataframe",
     
 ) -> pd.DataFrame:
-    url = f'https://{bucket}.s3.eu-central-1.amazonaws.com/{env}/{df_name}/df.parquet.gzip'
+    filename = "df.csv"
+    url = f'https://{bucket}.s3.eu-central-1.amazonaws.com/{env}/{df_name}/{filename}'
     r = requests.get(url, allow_redirects=True)
 
-    with open('df.parquet.gzip', 'wb') as f:
+    with open(filename, 'wb') as f:
         f.write(r.content)
 
-    with open('df.parquet.gzip', 'rb') as f:
-        df = pd.read_parquet(f)
+    with open(filename, 'rb') as f:
+        df = pd.read_csv(f)
 
     if df_type == "series":
         # Taking the first column if its a series as the assumption
