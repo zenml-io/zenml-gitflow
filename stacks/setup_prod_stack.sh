@@ -44,4 +44,6 @@ zenml stack share kubeflow_gitflow_stack
 zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 
 echo "In the following prompt, please set the `tracking_username` key with value of your MLflow username and `tracking_password` key with value of your MLflow password. "
-zenml secrets-manager secret register mlflow_secret -i
+zenml secrets-manager secret register mlflow_secret \
+  --tracking_username=<VALUE_1> \
+  --tracking_password=<VALUE_2>
