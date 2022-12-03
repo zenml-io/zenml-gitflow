@@ -57,7 +57,7 @@ def development_data_loader() -> Output(
     return X_train, X_test, y_train, y_test
 
 
-@step
+@step(enable_cache=False)
 def staging_data_loader() -> Output(
     X_train=pd.DataFrame,
     X_test=pd.DataFrame,
@@ -73,7 +73,7 @@ def staging_data_loader() -> Output(
     return X_train, X_test, y_train, y_test
 
 
-@step
+@step(enable_cache=False)
 def production_data_loader() -> Output(
     X_train=pd.DataFrame,
     X_test=pd.DataFrame,
