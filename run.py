@@ -65,9 +65,8 @@ def main(stage: str = "local"):
         from steps import staging_data_loader
         
         docker_settings = DockerSettings(
-            required_integrations=["sklearn", "kserve", "deepchecks", "mlflow"],
+            required_integrations=["sklearn", "mlflow"],
             requirements=["pandas==1.4.0"],
-            dockerfile="deepchecks-zenml.Dockerfile",
             build_options={
                 "buildargs": {
                     "ZENML_VERSION": f"{zenml.__version__}"
@@ -100,7 +99,7 @@ def main(stage: str = "local"):
         
         # docker settings for production
         docker_settings = DockerSettings(
-            required_integrations=["sklearn", "kserve", "mlflow", "evidently"],
+            required_integrations=["sklearn", "kserve", "mlflow"],
             requirements=["pandas==1.4.0"],
         )
         
