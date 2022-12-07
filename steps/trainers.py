@@ -57,6 +57,7 @@ def svc_trainer_mlflow(
 ) -> ClassifierMixin:
     """Train a sklearn SVC classifier and log to MLflow."""
     mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
+    print("test")
     model = SVC(
         C=params.C,
         kernel=params.kernel,
