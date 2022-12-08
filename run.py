@@ -29,7 +29,7 @@ from steps.data_loaders import (
     staging_data_loader,
 )
 from steps.evaluators import evaluator
-from steps.trainers import TrainerParams, svc_trainer_mlflow
+from steps.trainers import TrainerParams, svc_trainer
 
 from utils.kubeflow_helper import get_kubeflow_settings
 
@@ -56,11 +56,11 @@ def main(stage: str = "local"):
         # initialize and run the training pipeline
         training_pipeline_instance = development_pipeline(
             importer=development_data_loader(),
-            trainer=svc_trainer_mlflow(
+            trainer=svc_trainer(
                 params=TrainerParams(
                     degree=1,
                 )
-            ).configure(experiment_tracker=experiment_tracker.name),
+            ),
             evaluator=evaluator(),
         )
 
@@ -77,11 +77,11 @@ def main(stage: str = "local"):
         
         training_pipeline_instance = staging_train_and_deploy_pipeline(
             importer=staging_data_loader(),
-            trainer=svc_trainer_mlflow(
+            trainer=svc_trainer(
                 params=TrainerParams(
                     degree=1,
                 )
-            ).configure(experiment_tracker=experiment_tracker.name),
+            ),
             evaluator=evaluator(),
         )
         
@@ -102,11 +102,11 @@ def main(stage: str = "local"):
         # initialize and run the training pipeline in production
         training_pipeline_instance = prod_train_and_deploy_pipeline(
             importer=production_data_loader(),
-            trainer=svc_trainer_mlflow(
+            trainer=svc_trainer(
                 params=TrainerParams(
                     degree=1,
                 )
-            ).configure(experiment_tracker=experiment_tracker.name),
+            ),
             evaluator=evaluator(),
             deployment_trigger=deployment_trigger(),
             model_deployer=sklearn_model_deployer,
