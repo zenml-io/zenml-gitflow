@@ -12,7 +12,7 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-import mlflow
+# import mlflow
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
@@ -56,7 +56,7 @@ def svc_trainer_mlflow(
     y_train: pd.Series,
 ) -> ClassifierMixin:
     """Train a sklearn SVC classifier and log to MLflow."""
-    mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
+    # mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
     print("test")
     model = SVC(
         C=params.C,

@@ -45,12 +45,12 @@ def main(stage: str = "local"):
         AssertionError: "If experiment tracker not in stack."
     """
 
-    experiment_tracker = Client().active_stack.experiment_tracker
+    # experiment_tracker = Client().active_stack.experiment_tracker
 
     settings = {}
     
-    if experiment_tracker is None:
-        raise AssertionError("Experiment Tracker needs to exist in the stack!")
+    # if experiment_tracker is None:
+    #     raise AssertionError("Experiment Tracker needs to exist in the stack!")
     
     if stage == "local":
         # initialize and run the training pipeline
@@ -67,7 +67,7 @@ def main(stage: str = "local"):
     elif stage == "staging":
         # initialize the staging pipeline with a new data loader        
         docker_settings = DockerSettings(
-            required_integrations=["sklearn", "mlflow"],
+            required_integrations=["sklearn"],
             build_options={
                 "buildargs": {
                     "ZENML_VERSION": f"{zenml.__version__}"
@@ -96,7 +96,17 @@ def main(stage: str = "local"):
         
         # docker settings for production
         docker_settings = DockerSettings(
-            required_integrations=["sklearn", "kserve", "mlflow"],
+            required_integrations=["sklearn", "kserve"],
+            install_stack_requirements=False,
+            requirements=[
+                "boto3==1.21.0",
+                "kfp==1.8.13",
+                "kserve==0.9.0",
+                "s3fs==2022.3.0",
+                "sagemaker==2.82.2",
+                "scikit-learn",
+                "torch-model-archiver",
+            ]
         )
         
         # initialize and run the training pipeline in production
