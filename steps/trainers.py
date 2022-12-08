@@ -36,14 +36,16 @@ def svc_trainer(
     y_train: pd.Series,
 ) -> ClassifierMixin:
     """Train a sklearn SVC classifier."""
-    model = SVC(
-        C=params.C,
-        kernel=params.kernel,
-        degree=params.degree,
-        coef0=params.coef0,
-        shrinking=params.shrinking,
-        probability=params.probability,
-    )
+    # model = SVC(
+    #     C=params.C,
+    #     kernel=params.kernel,
+    #     degree=params.degree,
+    #     coef0=params.coef0,
+    #     shrinking=params.shrinking,
+    #     probability=params.probability,
+    # )
+    model = DecisionTreeClassifier(max_depth=5)
+
     model.fit(X_train.to_numpy(), y_train.to_numpy())
     train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
     print(f"Train accuracy: {train_acc}")
