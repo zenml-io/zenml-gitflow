@@ -10,5 +10,5 @@ scikit-learn
 torch-model-archiver
 itsdangerous==2.0.1
 werkzeug==2.0.3
-zenml==0.23.0
+zenml==0.30.0rc3
 parquet
