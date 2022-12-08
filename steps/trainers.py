@@ -17,6 +17,7 @@ import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
 from zenml.steps import BaseParameters, step
+from sklearn.tree import DecisionTreeClassifier
 
 
 class TrainerParams(BaseParameters):
@@ -28,7 +29,7 @@ class TrainerParams(BaseParameters):
     probability: bool = False
 
 
-@step
+@step(enable_cache=False)
 def svc_trainer(
     params: TrainerParams,
     X_train: pd.DataFrame,
@@ -58,6 +59,8 @@ def svc_trainer_mlflow(
     """Train a sklearn SVC classifier and log to MLflow."""
     # mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
     print("test")
+    
+    # model = DecisionTreeClassifier(max_depth=5)
     model = SVC(
         C=params.C,
         kernel=params.kernel,
@@ -66,6 +69,7 @@ def svc_trainer_mlflow(
         shrinking=params.shrinking,
         probability=params.probability,
     )
+    
     model.fit(X_train.to_numpy(), y_train.to_numpy())
     train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
     print(f"Train accuracy!: {train_acc}")
