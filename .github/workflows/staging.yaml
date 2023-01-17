@@ -47,7 +47,7 @@ jobs:
       - uses: syphar/restore-virtualenv@v1
         id: cache-virtualenv
         with:
-          requirement_files: 'requirements.txt'
+          requirement_files: 'requirements-staging.txt'
 
       - uses: syphar/restore-pip-download-cache@v1
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
@@ -57,11 +57,7 @@ jobs:
       - name: Install requirements
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
-          pip install -r requirements.txt -r requirements-integrations
-
-      - name: Install staging requirements
-        run: |
-          pip install gcsfs google-cloud-secret-manager google-cloud-aiplatform>=1.11.0
+          pip install -r requirements-staging.txt
 
       - name: Install google-auth 2.13.0
         run: |
