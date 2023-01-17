@@ -1,14 +1,4 @@
-boto3==1.21.0
-kfp==1.8.13
-kserve==0.9.0
-mlflow>=1.2.0,<1.26.0
-mlserver-mlflow>=0.5.3
-mlserver>=0.5.3
-s3fs==2022.3.0
-sagemaker==2.82.2
-scikit-learn
-torch-model-archiver
 itsdangerous==2.0.1
 werkzeug==2.0.3
-zenml==0.30.0rc3
+zenml==0.31.1
 parquet

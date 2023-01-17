@@ -57,7 +57,7 @@ jobs:
       - name: Install requirements
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-integrations
 
       - name: Install staging requirements
         run: |
