@@ -63,6 +63,9 @@ jobs:
         run: |
           pip install google-auth==2.13.0
 
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install wkhtmltopdf
+
       - name: Connect to ZenML server
         run: |
           zenml connect --no-verify-ssl --url $ZENML_HOST --username $ZENML_USERNAME --password $ZENML_PASSWORD
