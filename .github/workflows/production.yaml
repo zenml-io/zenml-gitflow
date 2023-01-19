@@ -1,4 +1,4 @@
-name: CI
+name: production
 on:
   push:
     branches: [ main ]

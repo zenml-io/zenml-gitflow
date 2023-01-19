@@ -14,7 +14,6 @@
 from typing import cast
 from deepchecks import SuiteResult
 import pdfkit
-import markdownify
 
 from zenml.post_execution import StepView
 
