@@ -1,14 +1,18 @@
 itsdangerous==2.0.1
 werkzeug==2.0.3
 zenml==0.31.1
-parquet
+parquet==1.3.1
+pdfkit==1.0.0
 
 # NOTE: these are generated with the following command and should be kept updated:
 #
-#  `zenml integration export-requirements sklearn mlflow`
+#  `zenml integration install sklearn mlflow deepchecks`
 #
-mlflow>=1.2.0,<1.26.0
-mlserver>=0.5.3
-mlserver-mlflow>=0.5.3
-protobuf>=3.7.0,<4.0.0
-scikit-learn
+deepchecks[vision]==0.8.0
+torchvision==0.14.0
+scikit-learn==1.2.0
+mlflow==1.25.1
+mlserver==1.2.3
+mlserver-mlflow==1.2.3
+protobuf==3.20.3
+

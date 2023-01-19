@@ -1,10 +1,9 @@
 #  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
-#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at:
 #
-#       https://www.apache.org/licenses/LICENSE-2.0
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,18 +11,16 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-import pandas as pd
-from sklearn.base import ClassifierMixin
-from zenml.steps import step
+from zenml.integrations.deepchecks.steps import (
+    DeepchecksModelDriftCheckStepParameters,
+    deepchecks_model_drift_check_step,
+)
 
+LABEL_COL = "target"
 
-@step
-def evaluator(
-    X_test: pd.DataFrame,
-    y_test: pd.Series,
-    model: ClassifierMixin,
-) -> float:
-    """Calculate the accuracy on the test set"""
-    test_acc = model.score(X_test.to_numpy(), y_test.to_numpy())
-    print(f"Test accuracy: {test_acc}")
-    return test_acc
+model_drift_detector = deepchecks_model_drift_check_step(
+    step_name="model_drift_detector",
+    params=DeepchecksModelDriftCheckStepParameters(
+        dataset_kwargs=dict(label=LABEL_COL, cat_features=[]),
+    ),
+)

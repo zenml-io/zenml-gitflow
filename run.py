@@ -20,21 +20,31 @@ from zenml.config import DockerSettings
 from pipelines import (
     development_pipeline,
     staging_train_and_deploy_pipeline,
-    prod_train_and_deploy_pipeline
+    prod_train_and_deploy_pipeline,
 )
 
 from steps.data_loaders import (
     development_data_loader,
     production_data_loader,
     staging_data_loader,
+    data_loader,
+    data_splitter,
 )
-from steps.evaluators import evaluator
-from steps.trainers import TrainerParams, svc_trainer
-
+from steps.model_evaluators import model_evaluator
+from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
+from steps.result_checkers import model_train_results_checker
+from steps.model_trainers import TrainerParams, svc_trainer
+from steps.data_validators import (
+    data_drift_detector,
+    data_integrity_checker,
+)
+from steps.model_validators import model_drift_detector
+from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from utils.kubeflow_helper import get_kubeflow_settings
+from utils.report_generators import deepcheck_suite_to_pdf
 
 
-def main(stage: str = "local"):
+def main(stage: str = "local", disable_caching: bool = False):
     """Main runner for all three pipelines.
 
     Args:
@@ -48,33 +58,36 @@ def main(stage: str = "local"):
     # experiment_tracker = Client().active_stack.experiment_tracker
 
     settings = {}
-    
+
     # if experiment_tracker is None:
     #     raise AssertionError("Experiment Tracker needs to exist in the stack!")
-    
+
     if stage == "local":
         # initialize and run the training pipeline
         training_pipeline_instance = development_pipeline(
-            importer=development_data_loader(),
-            trainer=svc_trainer(
+            importer=data_loader(),
+            data_splitter=data_splitter(),
+            data_integrity_checker=data_integrity_checker,
+            train_test_data_drift_detector=data_drift_detector,
+            model_trainer=svc_trainer(
                 params=TrainerParams(
                     degree=1,
                 )
             ),
-            evaluator=evaluator(),
+            model_evaluator=model_evaluator(),
+            train_test_model_drift_detector=model_drift_detector,
+            result_checker=model_train_results_checker(),
         )
 
     elif stage == "staging":
-        # initialize the staging pipeline with a new data loader        
+        # initialize the staging pipeline with a new data loader
         docker_settings = DockerSettings(
             required_integrations=["sklearn"],
             build_options={
-                "buildargs": {
-                    "ZENML_VERSION": f"{zenml.__version__}"
-                },
+                "buildargs": {"ZENML_VERSION": f"{zenml.__version__}"},
             },
         )
-        
+
         training_pipeline_instance = staging_train_and_deploy_pipeline(
             importer=staging_data_loader(),
             trainer=svc_trainer(
@@ -84,7 +97,7 @@ def main(stage: str = "local"):
             ),
             evaluator=evaluator(),
         )
-        
+
         settings = {
             "orchestrator.kubeflow": get_kubeflow_settings(),
             "docker": docker_settings,
@@ -93,7 +106,7 @@ def main(stage: str = "local"):
     elif stage == "production":
         from steps.deployment_triggers import deployment_trigger
         from steps.model_deployers import sklearn_model_deployer
-        
+
         # docker settings for production
         docker_settings = DockerSettings(
             required_integrations=["sklearn", "kserve"],
@@ -106,9 +119,9 @@ def main(stage: str = "local"):
                 "sagemaker==2.82.2",
                 "scikit-learn",
                 "torch-model-archiver",
-            ]
+            ],
         )
-        
+
         # initialize and run the training pipeline in production
         training_pipeline_instance = prod_train_and_deploy_pipeline(
             importer=production_data_loader(),
@@ -117,7 +130,7 @@ def main(stage: str = "local"):
                     degree=1,
                 )
             ),
-            evaluator=evaluator(),
+            evaluator=model_evaluator(),
             deployment_trigger=deployment_trigger(),
             model_deployer=sklearn_model_deployer,
         )
@@ -128,8 +141,29 @@ def main(stage: str = "local"):
 
     # Run pipeline
     training_pipeline_instance.run(
-        settings=settings
+        settings=settings, enable_cache=not disable_caching
     )
+
+    if stage == "local":
+        pipeline_run = training_pipeline_instance.get_runs()[-1]
+        data_integrity_step = pipeline_run.get_step(
+            step="data_integrity_checker"
+        )
+        data_drift_step = pipeline_run.get_step(step="train_test_data_drift_detector")
+        model_drift_step = pipeline_run.get_step(step="train_test_model_drift_detector")
+        DeepchecksVisualizer().visualize(data_integrity_step)
+        DeepchecksVisualizer().visualize(data_drift_step)
+        DeepchecksVisualizer().visualize(model_drift_step)
+
+        deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.md")
+        deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.md")
+        deepcheck_suite_to_pdf(model_drift_step, "model_drift_report.md")
+
+        print(
+            "Now run \n "
+            f"    mlflow ui --backend-store-uri {get_tracking_uri()}\n"
+            "To inspect your experiment runs within the mlflow UI.\n"
+        )
 
 
 if __name__ == "__main__":
@@ -143,7 +177,16 @@ if __name__ == "__main__":
         type=str,
         required=False,
     )
+    parser.add_argument(
+        "-d",
+        "--disable-caching",
+        default=False,
+        help="Disables caching for the pipeline. Defaults to False",
+        type=bool,
+        required=False,
+    )
     args = parser.parse_args()
-    
+
     assert args.stage in ["local", "staging", "production"]
-    main(args.stage)
+    assert isinstance(args.disable_caching, bool)
+    main(args.stage, args.disable_caching)

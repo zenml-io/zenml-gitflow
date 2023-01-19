@@ -16,11 +16,16 @@
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.steps import BaseParameters, step
+from zenml.client import Client
+from zenml.steps import BaseParameters, Output, step
 from sklearn.tree import DecisionTreeClassifier
+
+from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
+from utils.tracker_helper import enable_autolog, get_tracker_name
 
 
 class TrainerParams(BaseParameters):
+    random_state: int = 42
     C: int = 1.320498
     kernel: str = "rbf"
     degree: int = 3
@@ -28,14 +33,18 @@ class TrainerParams(BaseParameters):
     shrinking: bool = True
     probability: bool = False
 
-
-@step(enable_cache=False)
+@step(
+    experiment_tracker=get_tracker_name(),
+)
 def svc_trainer(
     params: TrainerParams,
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-) -> ClassifierMixin:
+    train_dataset: pd.DataFrame,
+) -> Output(model=ClassifierMixin, accuracy=float):
     """Train a sklearn SVC classifier."""
+    enable_autolog()
+
+    X = train_dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME]).to_numpy()
+    y = train_dataset[DATASET_TARGET_COLUMN_NAME].to_numpy()
     # model = SVC(
     #     C=params.C,
     #     kernel=params.kernel,
@@ -44,35 +53,11 @@ def svc_trainer(
     #     shrinking=params.shrinking,
     #     probability=params.probability,
     # )
-    model = DecisionTreeClassifier(max_depth=5)
-
-    model.fit(X_train.to_numpy(), y_train.to_numpy())
-    train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
-    print(f"Train accuracy: {train_acc}")
-    return model
-
-
-@step
-def svc_trainer_mlflow(
-    params: TrainerParams,
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-) -> ClassifierMixin:
-    """Train a sklearn SVC classifier and log to MLflow."""
-    # mlflow.sklearn.autolog()  # log all model hparams and metrics to MLflow
-    print("test")
-    
-    # model = DecisionTreeClassifier(max_depth=5)
-    model = SVC(
-        C=params.C,
-        kernel=params.kernel,
-        degree=params.degree,
-        coef0=params.coef0,
-        shrinking=params.shrinking,
-        probability=params.probability,
+    model = DecisionTreeClassifier(
+        max_depth=5, random_state=params.random_state
     )
-    
-    model.fit(X_train.to_numpy(), y_train.to_numpy())
-    train_acc = model.score(X_train.to_numpy(), y_train.to_numpy())
-    print(f"Train accuracy!: {train_acc}")
-    return model
+
+    model.fit(X, y)
+    train_acc = model.score(X, y)
+    print(f"Train accuracy: {train_acc}")
+    return model, train_acc
