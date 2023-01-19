@@ -18,7 +18,7 @@ from zenml.client import Client
 from zenml.config import DockerSettings
 
 from pipelines import (
-    training_pipeline, prod_train_and_deploy_pipeline,
+    gitflow_training_pipeline, prod_train_and_deploy_pipeline,
 )
 
 from steps.data_loaders import (
@@ -58,7 +58,7 @@ def main(stage: str = "local", disable_caching: bool = False):
     if stage == "local":
         # initialize and run the training pipeline
 
-        training_pipeline_instance = training_pipeline(
+        training_pipeline_instance = gitflow_training_pipeline(
             importer=data_loader(),
             data_splitter=data_splitter(),
             data_integrity_checker=data_integrity_checker,
@@ -82,7 +82,7 @@ def main(stage: str = "local", disable_caching: bool = False):
             },
         )
 
-        training_pipeline_instance = training_pipeline(
+        training_pipeline_instance = gitflow_training_pipeline(
             importer=data_loader(),
             data_splitter=data_splitter(),
             data_integrity_checker=data_integrity_checker,

@@ -16,7 +16,7 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def training_pipeline(
+def gitflow_training_pipeline(
     importer,
     data_splitter,
     data_integrity_checker,

@@ -69,16 +69,12 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml stack set vertex_gitflow_stack
+          zenml stack set gcp_gitflow_stack
           zenml stack up
         
       - name: Pull previous image for caching
         run: |
           docker pull $ZENML_STAGING_PIPELINE_IMAGE_NAME
-
-      - name: Show status before tests
-        run: |
-          zenml status
 
       - name: Run pipeline
         run: |

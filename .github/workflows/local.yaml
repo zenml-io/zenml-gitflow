@@ -43,10 +43,6 @@ jobs:
         run: |
           stacks/setup_local_stack.sh
 
-      - name: Show status before tests
-        run: |
-          zenml status
-          
       - name: Run pipeline
         run: |
           python run.py
