@@ -16,12 +16,32 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def staging_train_and_deploy_pipeline(
+def staging_pipeline(
     importer,
-    trainer,
-    evaluator,
+    data_splitter,
+    data_integrity_checker,
+    train_test_data_drift_detector,
+    model_trainer,
+    model_evaluator,
+    train_test_model_drift_detector,
+    result_checker,
 ):
-    """Train, evaluate, and deploy a model."""
-    X_train, X_test, y_train, y_test = importer()
-    model = trainer(X_train=X_train, y_train=y_train)
-    _ = evaluator(X_test=X_test, y_test=y_test, model=model)
+    """Load, check and split data, then train and evaluate a model."""
+    data = importer()
+    data_integrity_report = data_integrity_checker(dataset=data)
+    train_dataset, test_dataset = data_splitter(data)
+    train_test_data_drift_report = train_test_data_drift_detector(
+        reference_dataset=train_dataset, target_dataset=test_dataset
+    )
+    model, _ = model_trainer(train_dataset=train_dataset)
+    model_evaluator(test_dataset=test_dataset, model=model)
+    train_test_model_drift_report = train_test_model_drift_detector(
+        model=model,
+        reference_dataset=train_dataset,
+        target_dataset=test_dataset,
+    )
+    result_checker(
+        data_integrity_report=data_integrity_report,
+        train_test_data_drift_report=train_test_data_drift_report,
+        train_test_model_drift_report=train_test_model_drift_report,
+    )

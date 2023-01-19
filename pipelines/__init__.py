@@ -12,6 +12,6 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from pipelines.development_pipeline import development_pipeline
+from pipelines.training_pipeline import training_pipeline
 from pipelines.production_pipeline import prod_train_and_deploy_pipeline
-from pipelines.staging_pipeline import staging_train_and_deploy_pipeline
+from pipelines.staging_pipeline import staging_pipeline

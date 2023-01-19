@@ -16,7 +16,7 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def development_pipeline(
+def training_pipeline(
     importer,
     data_splitter,
     data_integrity_checker,

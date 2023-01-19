@@ -18,9 +18,7 @@ from zenml.client import Client
 from zenml.config import DockerSettings
 
 from pipelines import (
-    development_pipeline,
-    staging_train_and_deploy_pipeline,
-    prod_train_and_deploy_pipeline,
+    training_pipeline, prod_train_and_deploy_pipeline,
 )
 
 from steps.data_loaders import (
@@ -55,16 +53,12 @@ def main(stage: str = "local", disable_caching: bool = False):
         AssertionError: "If experiment tracker not in stack."
     """
 
-    # experiment_tracker = Client().active_stack.experiment_tracker
-
     settings = {}
-
-    # if experiment_tracker is None:
-    #     raise AssertionError("Experiment Tracker needs to exist in the stack!")
 
     if stage == "local":
         # initialize and run the training pipeline
-        training_pipeline_instance = development_pipeline(
+
+        training_pipeline_instance = training_pipeline(
             importer=data_loader(),
             data_splitter=data_splitter(),
             data_integrity_checker=data_integrity_checker,
@@ -88,14 +82,19 @@ def main(stage: str = "local", disable_caching: bool = False):
             },
         )
 
-        training_pipeline_instance = staging_train_and_deploy_pipeline(
-            importer=staging_data_loader(),
-            trainer=svc_trainer(
+        training_pipeline_instance = training_pipeline(
+            importer=data_loader(),
+            data_splitter=data_splitter(),
+            data_integrity_checker=data_integrity_checker,
+            train_test_data_drift_detector=data_drift_detector,
+            model_trainer=svc_trainer(
                 params=TrainerParams(
                     degree=1,
                 )
             ),
-            evaluator=evaluator(),
+            model_evaluator=model_evaluator(),
+            train_test_model_drift_detector=model_drift_detector,
+            result_checker=model_train_results_checker(),
         )
 
         settings = {
@@ -144,26 +143,34 @@ def main(stage: str = "local", disable_caching: bool = False):
         settings=settings, enable_cache=not disable_caching
     )
 
-    if stage == "local":
+    if stage in ["local", "staging"]:
         pipeline_run = training_pipeline_instance.get_runs()[-1]
         data_integrity_step = pipeline_run.get_step(
             step="data_integrity_checker"
         )
-        data_drift_step = pipeline_run.get_step(step="train_test_data_drift_detector")
-        model_drift_step = pipeline_run.get_step(step="train_test_model_drift_detector")
-        DeepchecksVisualizer().visualize(data_integrity_step)
-        DeepchecksVisualizer().visualize(data_drift_step)
-        DeepchecksVisualizer().visualize(model_drift_step)
-
-        deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.md")
-        deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.md")
-        deepcheck_suite_to_pdf(model_drift_step, "model_drift_report.md")
-
-        print(
-            "Now run \n "
-            f"    mlflow ui --backend-store-uri {get_tracking_uri()}\n"
-            "To inspect your experiment runs within the mlflow UI.\n"
+        data_drift_step = pipeline_run.get_step(
+            step="train_test_data_drift_detector"
         )
+        model_drift_step = pipeline_run.get_step(
+            step="train_test_model_drift_detector"
+        )
+
+        if stage == "local":
+            DeepchecksVisualizer().visualize(data_integrity_step)
+            DeepchecksVisualizer().visualize(data_drift_step)
+            DeepchecksVisualizer().visualize(model_drift_step)
+
+            print(
+                "Now run \n "
+                f"    mlflow ui --backend-store-uri {get_tracking_uri()}\n"
+                "To inspect your experiment runs within the mlflow UI.\n"
+            )
+        elif stage == "staging":
+            deepcheck_suite_to_pdf(
+                data_integrity_step, "data_integrity_report.md"
+            )
+            deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.md")
+            deepcheck_suite_to_pdf(model_drift_step, "model_drift_report.md")
 
 
 if __name__ == "__main__":
