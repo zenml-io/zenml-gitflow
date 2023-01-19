@@ -5,7 +5,7 @@ on:
       - main
     
 jobs:
-  run-staging-pipeline:
+  run-local-training-workflow:
     runs-on: ubuntu-latest
     env:
       ZENML_DEBUG: true
@@ -38,10 +38,6 @@ jobs:
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
           pip install -r requirements.txt
-
-      - name: Connect to ZenML server
-        run: |
-          zenml connect --no-verify-ssl --url $ZENML_HOST --username $ZENML_USERNAME --password $ZENML_PASSWORD
 
       - name: Setup local stack
         run: |

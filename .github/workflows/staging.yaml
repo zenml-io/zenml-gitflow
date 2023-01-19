@@ -5,7 +5,7 @@ on:
       - main
     
 jobs:
-  run-staging-pipeline:
+  run-staging-workflow:
     runs-on: ubuntu-latest
     env:
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
