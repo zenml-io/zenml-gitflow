@@ -18,7 +18,7 @@ from zenml.client import Client
 from zenml.config import DockerSettings
 
 from pipelines import (
-    gitflow_training_pipeline, prod_train_and_deploy_pipeline,
+    gitflow_training_pipeline, gitflow_train_and_deploy_pipeline,
 )
 
 from steps.data_loaders import (
@@ -122,7 +122,7 @@ def main(stage: str = "local", disable_caching: bool = False):
         )
 
         # initialize and run the training pipeline in production
-        training_pipeline_instance = prod_train_and_deploy_pipeline(
+        training_pipeline_instance = gitflow_train_and_deploy_pipeline(
             importer=production_data_loader(),
             trainer=svc_trainer(
                 params=TrainerParams(
