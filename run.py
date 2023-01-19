@@ -16,6 +16,7 @@ import argparse
 import zenml
 from zenml.client import Client
 from zenml.config import DockerSettings
+from zenml.config.docker_settings import PythonEnvironmentExportMethod
 
 from pipelines import (
     gitflow_training_pipeline, gitflow_train_and_deploy_pipeline,
@@ -76,10 +77,8 @@ def main(stage: str = "local", disable_caching: bool = False):
     elif stage == "staging":
         # initialize the staging pipeline with a new data loader
         docker_settings = DockerSettings(
-            required_integrations=["sklearn"],
-            build_options={
-                "buildargs": {"ZENML_VERSION": f"{zenml.__version__}"},
-            },
+            install_stack_requirements=False,
+            requirements = "requirements-staging.txt",
         )
 
         training_pipeline_instance = gitflow_training_pipeline(
@@ -108,17 +107,8 @@ def main(stage: str = "local", disable_caching: bool = False):
 
         # docker settings for production
         docker_settings = DockerSettings(
-            required_integrations=["sklearn", "kserve"],
             install_stack_requirements=False,
-            requirements=[
-                "boto3==1.21.0",
-                "kfp==1.8.13",
-                "kserve==0.9.0",
-                "s3fs==2022.3.0",
-                "sagemaker==2.82.2",
-                "scikit-learn",
-                "torch-model-archiver",
-            ],
+            requirements="requirements-prod.txt",
         )
 
         # initialize and run the training pipeline in production
