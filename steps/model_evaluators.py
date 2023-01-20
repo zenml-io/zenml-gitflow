@@ -12,9 +12,11 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
+from typing import Optional
 import pandas as pd
 from sklearn.base import ClassifierMixin
-from zenml.steps import step
+from zenml.client import Client
+from zenml.steps import step, Output
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import get_tracker_name, log_metric
