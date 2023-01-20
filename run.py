@@ -79,7 +79,7 @@ def main(stage: str = "local", disable_caching: bool = False):
         docker_settings = DockerSettings(
             install_stack_requirements=False,
             requirements = "requirements-staging.txt",
-            apt_packages=["libgl1-mesa-dev"], # required by OpenCV which is used by Deepchecks
+            apt_packages=["python3-opencv"], # required to make OpenCV work in a container (which is used by Deepchecks)
         )
 
         training_pipeline_instance = gitflow_training_pipeline(

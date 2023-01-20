@@ -13,7 +13,8 @@ zenml orchestrator register vertex_ai_orchestrator \
   --flavor=vertex \
   --project=zenml-demos \
   --location=europe-west3 \
-  --workload_service_account=ing-zenmlsa-ing@zenml-demos.iam.gserviceaccount.com
+  --workload_service_account=ing-zenmlsa-ing@zenml-demos.iam.gserviceaccount.com \
+  --synchronous=true
 
 zenml artifact-store register gcp_store -f gcp --path=gs://ing-store
 
