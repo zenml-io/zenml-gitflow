@@ -13,6 +13,7 @@
 #  permissions and limitations under the License.
 
 import argparse
+from enum import Enum
 import zenml
 from zenml.client import Client
 from zenml.config import DockerSettings
@@ -20,7 +21,7 @@ from zenml.config.docker_settings import PythonEnvironmentExportMethod
 
 from pipelines import (
     gitflow_training_pipeline,
-    gitflow_deployment_pipeline,
+    gitflow_extended_training_pipeline,
     gitflow_end_to_end_pipeline,
 )
 
@@ -76,8 +77,15 @@ MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
 MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
 
 
+class Pipeline(str, Enum):
+
+    TRAIN = "train"
+    PRE_DEPLOY = "pre-deploy"
+    END_TO_END = "end-to-end"
+
+
 def main(
-    pipeline_name: str = "train",
+    pipeline_name: Pipeline = Pipeline.TRAIN,
     disable_caching: bool = False,
     ignore_checks: bool = False,
     requirements_file: str = "requirements.txt",
@@ -86,7 +94,7 @@ def main(
     """Main runner for all pipelines.
 
     Args:
-        pipeline: One of "train", "deploy", and "end-to-end".
+        pipeline: One of "train", "pre-deploy", and "end-to-end".
         disable_caching: Whether to disable caching. Defaults to False.
         ignore_checks: Whether to ignore model appraisal checks. Defaults to False.
         requirements_file: The requirements file to use to ensure reproducibility.
@@ -106,7 +114,7 @@ def main(
     settings["docker"] = docker_settings
 
     client = Client()
-    if pipeline_name in ["deploy", "end-to-end"]:
+    if pipeline_name in [Pipeline.PRE_DEPLOY, Pipeline.END_TO_END]:
         model_deployer = client.active_stack.model_deployer
         if model_deployer is None:
             raise ValueError(
@@ -138,7 +146,9 @@ def main(
 
         elif model_deployer.flavor == "kserve":
 
-            from zenml.integrations.kserve.services import KServeDeploymentConfig
+            from zenml.integrations.kserve.services import (
+                KServeDeploymentConfig,
+            )
             from zenml.integrations.kserve.steps import (
                 KServeDeployerStepParameters,
                 kserve_model_deployer_step,
@@ -169,7 +179,7 @@ def main(
     if orchestrator.flavor == "kubeflow":
         settings["orchestrator.kubeflow"] = get_kubeflow_settings()
 
-    if pipeline_name == "train":
+    if pipeline_name == Pipeline.TRAIN:
 
         pipeline_instance = gitflow_training_pipeline(
             importer=data_loader(),
@@ -200,7 +210,59 @@ def main(
             ),
         )
 
-    elif pipeline_name == "end-to-end":
+    elif pipeline_name == Pipeline.PRE_DEPLOY:
+
+        pipeline_instance = gitflow_extended_training_pipeline(
+            importer=data_loader(),
+            data_splitter=data_splitter(
+                params=DataSplitterStepParameters(
+                    test_size=TRAIN_TEST_SPLIT,
+                    random_state=RANDOM_STATE,
+                )
+            ),
+            data_integrity_checker=data_integrity_checker,
+            train_test_data_drift_detector=data_drift_detector,
+            model_trainer=svc_trainer(),
+            model_scorer=model_scorer(
+                params=ModelScorerStepParams(
+                    accuracy_metric_name="test_accuracy",
+                )
+            ),
+            model_evaluator=model_evaluator,
+            train_test_model_evaluator=train_test_model_evaluator,
+            served_model_loader=served_model_loader(
+                params=ServedModelLoaderStepParameters(
+                    model_name=model_name,
+                    step_name="model_deployer",
+                )
+            ),
+            served_model_train_scorer=optional_model_scorer(
+                name="served_model_train_scorer",
+                params=ModelScorerStepParams(
+                    accuracy_metric_name="reference_train_accuracy",
+                ),
+            ),
+            served_model_test_scorer=optional_model_scorer(
+                name="served_model_test_scorer",
+                params=ModelScorerStepParams(
+                    accuracy_metric_name="reference_test_accuracy",
+                ),
+            ),
+            model_appraiser=model_train_reference_appraiser(
+                params=ModelAppraisalStepParams(
+                    train_accuracy_threshold=MIN_TRAIN_ACCURACY,
+                    test_accuracy_threshold=MIN_TEST_ACCURACY,
+                    max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
+                    max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
+                    ignore_data_integrity_failures=ignore_checks,
+                    ignore_train_test_data_drift_failures=ignore_checks,
+                    ignore_model_evaluation_failures=ignore_checks,
+                    ignore_reference_model=ignore_checks,
+                )
+            ),
+        )
+
+    elif pipeline_name == Pipeline.END_TO_END:
 
         pipeline_instance = gitflow_end_to_end_pipeline(
             importer=data_loader(),
@@ -222,7 +284,7 @@ def main(
             train_test_model_evaluator=train_test_model_evaluator,
             served_model_loader=served_model_loader(
                 params=ServedModelLoaderStepParameters(
-                    model_name=MODEL_NAME,
+                    model_name=model_name,
                     step_name="model_deployer",
                 )
             ),
@@ -277,9 +339,9 @@ def main(
         # If mlflow is used as a tracker, print the command to run the UI
         # The reports are accessible as artifacts in the mlflow tracker
         print(
-            "Now run e.g.:\n "
+            "NOTE: you have to manually start the MLflow UI by running e.g.:\n "
             f"    mlflow ui --backend-store-uri {get_tracking_uri()} -p {LOCAL_MLFLOW_UI_PORT}\n"
-            "To inspect your experiment runs within the mlflow UI.\n"
+            "to be able inspect your experiment runs within the mlflow UI.\n"
         )
     else:
         # If no tracker is used, open the reports in the browser
@@ -306,7 +368,15 @@ if __name__ == "__main__":
         "--pipeline",
         default="train",
         help="Toggles which pipeline to run. One of `train`, "
-        "`deploy`, and `end-to-end`. Defaults to `train`",
+        "`pre-deploy`, and `end-to-end`. Defaults to `train`",
+        type=str,
+        required=False,
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        default="model",
+        help="Name of the model to train/deploy. Defaults to `model`",
         type=str,
         required=False,
     )
@@ -337,12 +407,17 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    assert args.pipeline in ["train", "deploy", "end-to-end"]
+    assert args.pipeline in [
+        Pipeline.TRAIN,
+        Pipeline.PRE_DEPLOY,
+        Pipeline.END_TO_END,
+    ]
     assert isinstance(args.disable_caching, bool)
     assert isinstance(args.ignore_checks, bool)
     main(
-        pipeline_name=args.pipeline,
+        pipeline_name=Pipeline(args.pipeline),
         disable_caching=args.disable_caching,
         ignore_checks=args.ignore_checks,
         requirements_file=args.requirements,
+        model_name=args.model,
     )

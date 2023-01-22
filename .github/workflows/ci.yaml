@@ -76,7 +76,7 @@ jobs:
 
       - name: Run pipeline
         run: |
-          python run.py --pipeline train --requirements requirements-staging.txt
+          python run.py --pipeline pre-deploy --requirements requirements-staging.txt --model iris_classifier
 
       - name: PR comment with training report
         uses: thollander/actions-comment-pull-request@v2
