@@ -60,6 +60,7 @@ from steps.model_evaluators import (
     train_test_model_evaluator,
 )
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
+from zenml.integrations.deepchecks import DeepchecksIntegration
 from utils.kubeflow_helper import get_kubeflow_settings
 from utils.report_generators import (
     deepcheck_suite_to_pdf,
@@ -110,6 +111,7 @@ def main(
     docker_settings = DockerSettings(
         install_stack_requirements=False,
         requirements=requirements_file,
+        apt_packages=DeepchecksIntegration.APT_PACKAGES, # for Deepchecks
     )
     settings["docker"] = docker_settings
 
