@@ -18,7 +18,6 @@ jobs:
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
-      ZENML_STAGING_PIPELINE_IMAGE_NAME: ${{ secrets.ZENML_STAGING_PIPELINE_IMAGE_NAME }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -74,11 +73,12 @@ jobs:
         run: |
           zenml stack set gcp_gitflow_stack
           zenml stack up
-        
-      - name: Pull previous image for caching
-        run: |
-          docker pull $ZENML_STAGING_PIPELINE_IMAGE_NAME
 
       - name: Run pipeline
         run: |
-          python run.py --stage staging
+          python run.py --pipeline train --requirements requirements-staging.txt
+
+      - name: PR comment with training report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: model_train_results.md

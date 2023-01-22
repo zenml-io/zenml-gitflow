@@ -16,16 +16,21 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def gitflow_train_and_deploy_pipeline(
+def gitflow_deployment_pipeline(
     importer,
-    trainer,
-    evaluator,
-    deployment_trigger,
+    trained_model_loader,
+    served_model_loader,
+    train_serve_model_evaluator,
     model_deployer,
 ):
-    """Train, evaluate, and deploy a model."""
-    X_train, X_test, y_train, y_test = importer()
-    model = trainer(X_train=X_train, y_train=y_train)
-    test_acc = evaluator(X_test=X_test, y_test=y_test, model=model)
-    deployment_decision = deployment_trigger(test_acc)
-    model_deployer(deployment_decision, model)
+    """Load a newly trained and the currently served model, compare them, then deploy the new model if better."""
+    data = importer()
+
+    trained_model = trained_model_loader()
+    served_model = served_model_loader() 
+    deploy_decision = train_serve_model_evaluator(
+        model=trained_model,
+        reference_model=served_model,
+        dataset=data,
+    )
+    model_deployer(deploy_decision = deploy_decision, model=trained_model)

@@ -43,8 +43,8 @@ def svc_trainer(
     """Train a sklearn SVC classifier."""
     enable_autolog()
 
-    X = train_dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME]).to_numpy()
-    y = train_dataset[DATASET_TARGET_COLUMN_NAME].to_numpy()
+    X = train_dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME])
+    y = train_dataset[DATASET_TARGET_COLUMN_NAME]
     # model = SVC(
     #     C=params.C,
     #     kernel=params.kernel,

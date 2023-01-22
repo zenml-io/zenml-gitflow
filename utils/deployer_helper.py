@@ -15,26 +15,36 @@
 from sklearn.base import ClassifierMixin
 from typing import Optional, Tuple
 from zenml.client import Client
-from zenml.post_execution import StepView
+from zenml.enums import ArtifactType
+from zenml.services import BaseService
+from zenml.post_execution import get_pipeline, StepView
 
 
-def get_deployed_model(
+def load_deployed_model(
     model_name: str,
-) -> Tuple[Optional[ClassifierMixin], str, str, str]:
-    """Load and return the model with the given name being currently served."""
+    step_name: str,
+) -> Tuple[Optional[BaseService], Optional[ClassifierMixin]]:
+    """Load and return the model with the given name being currently served.
+
+    Args:
+        model_name: The name of the model to load.
+        step_name: The name of the pipeline step that was used to deploy the model.
+    """
 
     model_deployer = Client().active_stack.model_deployer
     if model_deployer is None:
         raise ValueError("No model deployer found in the active stack.")
-    models = model_deployer.find_model_server(model_name=model_name)
+    model_servers = model_deployer.find_model_server(model_name=model_name)
 
-    if len(models) == 0:
+    if len(model_servers) == 0:
         print(f"No model with name {model_name} is currently deployed.")
-        return None, "", "", ""
+        return None, None
 
-    pipeline_name = models[0].config.pipeline_name
-    pipeline_run_id = models[0].config.pipeline_run_id
-    step_name = models[0].config.pipeline_step_name
+    pipeline_name = model_servers[0].config.pipeline_name
+    pipeline_run_id = model_servers[0].config.pipeline_run_id
+    # NOTE: this is not accurate as it points to the step function name instead
+    # of the pipeline step name. This is a bug in the model deployer.
+    # step_name = models[0].config.pipeline_step_name
 
     pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_run_id)
     steps = Client().list_run_steps(pipeline_run_id=pipeline_run.id)
@@ -45,9 +55,53 @@ def get_deployed_model(
             f"pipeline run {pipeline_run_id} of pipeline {pipeline_name} that "
             f"was used to deploy the model {model_name}."
         )
-        return None, "", "", ""
+        return None, None
 
     step_view = StepView(step)
-    step_model_input = step_view.inputs.values()[0]
+    step_model_input = step_view.inputs["model"]
     model = step_model_input.read(output_data_type=ClassifierMixin)
-    return model, pipeline_name, pipeline_run_id, step_name
+    return model_servers[0], model
+
+
+def load_trained_model(
+    pipeline_name: str,
+    step_name: str,
+    output_name: Optional[str] = None,
+) -> Optional[ClassifierMixin]:
+    """Load and return the model trained by the last training pipeline run."""
+
+    pipeline = get_pipeline(pipeline_name)
+    if pipeline is None:
+        raise ValueError(f"No pipeline with name {pipeline_name} found.")
+    if len(pipeline.runs) == 0:
+        print(f"No pipeline run found for pipeline {pipeline_name}.")
+        return None
+    pipeline_run = pipeline.runs[-1]
+    step = pipeline_run.get_step(step_name)
+    if step is None:
+        print(f"No step with name {step_name} found in pipeline run {pipeline_run.name}.")
+        return None
+    if not step.is_completed and not step.is_cached:
+        print(f"Step {step_name} in pipeline run {pipeline_run.name} is {step.status.value}.")
+        return None
+    if not step.outputs:
+        print(f"Step {step_name} in pipeline run {pipeline_run.name} has no outputs.")
+        return None
+    if output_name is None:
+        output = list(step.outputs.values())[0]
+    elif output_name not in step.outputs:
+        print(
+            f"Step {step_name} in pipeline run {pipeline_run.name} has no output with "
+            f"name {output_name}."
+        )
+        return None
+    else:
+        output = step.outputs[output_name]
+    if output.type != ArtifactType.MODEL.value:
+        print(
+            f"Output {output.name} of step {step_name} in pipeline run {pipeline_run.name} "
+            f"is not a model."
+        )
+        return None
+    model = output.read(output_data_type=ClassifierMixin)
+    return model

@@ -16,32 +16,40 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def gitflow_deployment_pipeline(
+def gitflow_training_pipeline(
     importer,
     data_splitter,
     data_integrity_checker,
     train_test_data_drift_detector,
     model_trainer,
+    model_scorer,
     model_evaluator,
-    train_test_model_drift_detector,
-    result_checker,
+    train_test_model_evaluator,
+    model_appraiser,
 ):
-    """Load, check and split data, then train and evaluate a model."""
+    """Train and evaluate a new model."""
     data = importer()
     data_integrity_report = data_integrity_checker(dataset=data)
     train_dataset, test_dataset = data_splitter(data)
     train_test_data_drift_report = train_test_data_drift_detector(
         reference_dataset=train_dataset, target_dataset=test_dataset
     )
-    model, _ = model_trainer(train_dataset=train_dataset)
-    model_evaluator(test_dataset=test_dataset, model=model)
-    train_test_model_drift_report = train_test_model_drift_detector(
+    model, train_accuracy = model_trainer(train_dataset=train_dataset)
+    test_accuracy = model_scorer(dataset=test_dataset, model=model)
+    train_test_model_evaluation_report = train_test_model_evaluator(
         model=model,
         reference_dataset=train_dataset,
         target_dataset=test_dataset,
     )
-    result_checker(
+    model_evaluation_report = model_evaluator(
+        model=model,
+        dataset=test_dataset,
+    )
+    model_appraiser(
+        train_accuracy=train_accuracy,
+        test_accuracy=test_accuracy,
         data_integrity_report=data_integrity_report,
         train_test_data_drift_report=train_test_data_drift_report,
-        train_test_model_drift_report=train_test_model_drift_report,
+        model_evaluation_report=model_evaluation_report,
+        train_test_model_evaluation_report=train_test_model_evaluation_report,
     )
