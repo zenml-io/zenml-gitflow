@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-      GCR_PIPELINE_IMAGE_NAME: ${{ secrets.GCR_PIPELINE_IMAGE_NAME }}
       KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_STAGING_USERNAME }}
       KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_STAGING_PASSWORD }}
       KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_STAGING_NAMESPACE }}
@@ -59,10 +58,6 @@ jobs:
         run: |
           pip install -r requirements-staging.txt
 
-      # - name: Install google-auth 2.13.0
-      #   run: |
-      #     pip install google-auth==2.13.0
-
       - name: Install wkhtmltopdf
         run: sudo apt-get install wkhtmltopdf
 
@@ -75,17 +70,13 @@ jobs:
           zenml stack set gcp_gitflow_stack
           zenml stack up
 
-      - name: Pull previous image for caching
-        run: |
-          docker pull $GCR_PIPELINE_IMAGE_NAME:gitflow_training_pipeline
-        continue-on-error: true
-
       - name: Run pipeline
         run: |
           python run.py \
             --pipeline train \
             --requirements requirements-staging.txt \
-            --model iris_classifier
+            --model iris_classifier \
+            --dataset staging
 
       - name: Read training report
         id: report

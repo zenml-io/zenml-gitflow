@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ from zenml.pipelines import pipeline
 @pipeline
 def gitflow_end_to_end_pipeline(
     importer,
+    data_preprocessor,
     data_splitter,
     data_integrity_checker,
     train_test_data_drift_detector,
@@ -33,7 +34,8 @@ def gitflow_end_to_end_pipeline(
 ):
     """Train and serve a new model if it performs better than the model
     currently served."""
-    data = importer()
+    imported_data = importer()
+    data = data_preprocessor(dataset=imported_data)
     served_model = served_model_loader()
     data_integrity_report = data_integrity_checker(dataset=data)
     train_dataset, test_dataset = data_splitter(data)

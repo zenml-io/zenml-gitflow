@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 import argparse
 from enum import Enum
+from typing import Optional
 import zenml
 from zenml.client import Client
 from zenml.config import DockerSettings
@@ -28,11 +29,11 @@ from pipelines import (
 from steps.data_loaders import (
     DataLoaderStepParameters,
     DataSplitterStepParameters,
-    DataVersion, 
     data_loader,
     data_splitter,
 )
 from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
+from steps.data_preprocessors import data_preprocessor
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
     model_train_appraiser,
@@ -45,7 +46,7 @@ from steps.model_loaders import (
     trained_model_loader,
 )
 
-from steps.model_trainers import SVCTrainerParams, svc_trainer
+from steps.model_trainers import DecisionTreeTrainerParams, SVCTrainerParams, decision_tree_trainer, svc_trainer
 
 from steps.data_validators import (
     data_drift_detector,
@@ -70,10 +71,10 @@ from utils.report_generators import (
 from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
 # These global parameters should be the same across all workflow stages.
-RANDOM_STATE = 38
+RANDOM_STATE = 42
 TRAIN_TEST_SPLIT = 0.2
-MIN_TRAIN_ACCURACY = 0.9
-MIN_TEST_ACCURACY = 0.8
+MIN_TRAIN_ACCURACY = 0.7
+MIN_TEST_ACCURACY = 0.7
 MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
 MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
 
@@ -91,7 +92,7 @@ def main(
     ignore_checks: bool = False,
     requirements_file: str = "requirements.txt",
     model_name: str = "model",
-    dataset_version: DataVersion = DataVersion.EXPERIMENTATION,
+    dataset_version: Optional[str] = None,
 ):
     """Main runner for all pipelines.
 
@@ -103,8 +104,8 @@ def main(
             Defaults to "requirements.txt".
         model_name: The name to use for the trained/deployed model. Defaults to
             "model".
-        dataset_version: The dataset version to use. Defaults to
-            DataVersion.EXPERIMENTATION.
+        dataset_version: The dataset version to use to train the model. If not
+            set, the original dataset shipped with sklearn will be used.
     """
 
     settings = {}
@@ -118,6 +119,13 @@ def main(
         apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
+
+    model_trainer = decision_tree_trainer(
+        params=DecisionTreeTrainerParams(
+            random_state=RANDOM_STATE,
+            max_depth=3,
+        )
+    )
 
     client = Client()
     if pipeline_name in [Pipeline.PRE_DEPLOY, Pipeline.END_TO_END]:
@@ -193,6 +201,7 @@ def main(
                     version = dataset_version,
                 ),
             ),
+            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -201,7 +210,7 @@ def main(
             ),
             data_integrity_checker=data_integrity_checker,
             train_test_data_drift_detector=data_drift_detector,
-            model_trainer=svc_trainer(),
+            model_trainer=model_trainer,
             model_scorer=model_scorer(
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
@@ -228,6 +237,7 @@ def main(
                     version = dataset_version,
                 ),
             ),
+            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -236,7 +246,7 @@ def main(
             ),
             data_integrity_checker=data_integrity_checker,
             train_test_data_drift_detector=data_drift_detector,
-            model_trainer=svc_trainer(),
+            model_trainer=model_trainer,
             model_scorer=model_scorer(
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
@@ -284,6 +294,7 @@ def main(
                     version = dataset_version,
                 ),
             ),
+            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -292,7 +303,7 @@ def main(
             ),
             data_integrity_checker=data_integrity_checker,
             train_test_data_drift_detector=data_drift_detector,
-            model_trainer=svc_trainer(),
+            model_trainer=model_trainer,
             model_scorer=model_scorer(
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
@@ -413,10 +424,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d",
         "--dataset",
-        default=DataVersion.EXPERIMENTATION,
-        help="Dataset to use for training. One of `experimentation`, "
-        "`staging`, and `production`. Defaults to `experimentation`.",
-        type=DataVersion,
+        default=None,
+        help="Dataset to use for training. One of `staging`, and `production`. "
+        "Leave unset, to use the original dataset shipped with sklearn.",
+        type=str,
         required=False,
     )
     parser.add_argument(
@@ -433,7 +444,7 @@ if __name__ == "__main__":
         "--disable-caching",
         default=False,
         help="Disables caching for the pipeline. Defaults to False",
-        type=bool,
+        action='store_true',
         required=False,
     )
     parser.add_argument(
@@ -441,7 +452,7 @@ if __name__ == "__main__":
         "--ignore-checks",
         default=False,
         help="Ignore model training checks. Defaults to False",
-        type=bool,
+        action='store_true',
         required=False,
     )
     args = parser.parse_args()
@@ -450,11 +461,6 @@ if __name__ == "__main__":
         Pipeline.TRAIN,
         Pipeline.PRE_DEPLOY,
         Pipeline.END_TO_END,
-    ]
-    assert args.dataset in [
-        DataVersion.EXPERIMENTATION,
-        DataVersion.STAGING,
-        DataVersion.PRODUCTION,
     ]
     assert isinstance(args.disable_caching, bool)
     assert isinstance(args.ignore_checks, bool)

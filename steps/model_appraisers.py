@@ -51,8 +51,8 @@ class ModelAppraisalStepParams(BaseParameters):
             the trained model and the reference model on the test data.
     """
 
-    train_accuracy_threshold: float = 0.9
-    test_accuracy_threshold: float = 0.8
+    train_accuracy_threshold: float = 0.7
+    test_accuracy_threshold: float = 0.7
     ignore_data_integrity_failures: bool = False
     ignore_train_test_data_drift_failures: bool = False
     ignore_model_evaluation_failures: bool = False

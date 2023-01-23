@@ -12,9 +12,22 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from pipelines.training import (
-    gitflow_training_pipeline,
-    gitflow_extended_training_pipeline,
-)
-from pipelines.end_to_end import gitflow_end_to_end_pipeline
-from pipelines.etl import gitflow_data_generation_pipeline
+from zenml.pipelines import pipeline
+
+
+@pipeline
+def gitflow_data_generation_pipeline(
+    importer,
+    data_generator,
+    data_integrity_checker,
+    data_drift_detector,
+    # exporter,
+):
+    """Pipeline simulates new data ETL by synthetically generating new data."""
+    data = importer()
+    new_data = data_generator(dataset=data)
+    data_integrity_report = data_integrity_checker(dataset=data)
+    data_drift_report = data_drift_detector(
+        reference_dataset=data, target_dataset=new_data
+    )
+    # exporter(dataset=new_data)

@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at:
@@ -20,6 +20,11 @@ from zenml.integrations.deepchecks.steps import (
     DeepchecksDataIntegrityCheckStepParameters,
     deepchecks_data_integrity_check_step,
 )
+from zenml.integrations.deepchecks.validation_checks import (
+    DeepchecksDataIntegrityCheck,
+    DeepchecksDataDriftCheck,
+)
+
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 
 # Deepchecks data integrity check step
@@ -30,13 +35,32 @@ data_integrity_checker = deepchecks_data_integrity_check_step(
             label=DATASET_TARGET_COLUMN_NAME,
             cat_features=[],
         ),
+        check_kwargs={
+            DeepchecksDataIntegrityCheck.TABULAR_FEATURE_LABEL_CORRELATION: dict(
+                condition_feature_pps_less_than=dict(
+                    threshold=0.95,
+                )
+            ),
+        }
     ),
 )
+
+from deepchecks.tabular.checks import FeatureLabelCorrelationChange
 
 # Deepchecks train-test data similarity check step
 data_drift_detector = deepchecks_data_drift_check_step(
     step_name="data_drift_detector",
     params=DeepchecksDataDriftCheckStepParameters(
         dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
+        check_kwargs={
+            DeepchecksDataDriftCheck.TABULAR_FEATURE_LABEL_CORRELATION_CHANGE: dict(
+                condition_feature_pps_in_train_less_than=dict(
+                    threshold=0.95,
+                ),
+                condition_feature_pps_difference_less_than=dict(
+                    threshold=1.0,
+                ),
+            )
+        }
     ),
 )

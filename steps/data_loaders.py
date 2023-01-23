@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 """Data loader steps for the Iris classification pipeline."""
 
 from enum import Enum
+from typing import Optional
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
@@ -26,55 +27,25 @@ DATASET_TARGET_COLUMN_NAME = "target"
 
 
 def download_dataframe(
+    version: str,
     bucket: str = "zenmlpublicdata",
-    env: str = "staging",
-    df_name: str = "X_train",
-    df_type: str = "dataframe",
 ) -> pd.DataFrame:
-    filename = "df.csv"
-    url = f"https://{bucket}.s3.eu-central-1.amazonaws.com/{env}/{df_name}/{filename}"
-    r = requests.get(url, allow_redirects=True)
-
-    with open(filename, "wb") as f:
-        f.write(r.content)
-
-    with open(filename, "rb") as f:
-        df = pd.read_csv(f)
-
-    if df_type == "series":
-        # Taking the first column if its a series as the assumption
-        # is that there will only be one
-        df = df[df.columns[0]]
-
+    url = f"https://{bucket}.s3.eu-central-1.amazonaws.com/gitflow_data/{version}.csv"
+    df = pd.read_csv(url)
     return df
-
-
-class DataVersion(str, Enum):
-    """Enum for data versions.
-    
-    This encodes the possible data versions that can be loaded by the
-    various pipelines:
-
-    - EXPERIMENTATION: Data version used for local experimentation.
-    - STAGING: Data version used for staging changes before they are
-        deployed to production.
-    - PRODUCTION: Data version used in production.
-    """
-
-    EXPERIMENTATION = "experimentation"
-    STAGING = "staging"
-    PRODUCTION = "production"
 
 
 class DataLoaderStepParameters(BaseParameters):
     """Parameters for the data_loader step.
 
     Attributes:
-        version: data version to load. Use an actual data version number or
-            one of the DataVersion enum values.
+        version: data version to load. If not set, the step loads the original
+            dataset shipped with scikit-learn. If a version is supplied, the
+            step loads the datasets with the given version stored in the public
+            S3 bucket.
     """
 
-    version: DataVersion = DataVersion.EXPERIMENTATION
+    version: Optional[str] = None
 
 
 @step
@@ -89,26 +60,15 @@ def data_loader(
     Returns:
         The dataset with the indicated version.
     """
-    if params.version == DataVersion.EXPERIMENTATION:
+    if params.version is None:
         # We use the original data shipped with scikit-learn for experimentation
         iris = load_iris(as_frame=True).frame
         return iris
 
     else:
-        # We use data stored in the public S3 bucket for staging and
-        # production
-        if params.version == DataVersion.STAGING:
-            env = "staging"
-        else:
-            env = "production"
-
-        X_train = download_dataframe(env=env, df_name="X_train")
-        X_test = download_dataframe(env=env, df_name="X_test")
-        y_train = download_dataframe(
-            env=env, df_name="y_train", df_type="series"
-        )
-        y_test = download_dataframe(env=env, df_name="y_test", df_type="series")
-        return X_train + X_test + y_train + y_test
+        # We use data stored in the public S3 bucket for specified versions
+        dataset = download_dataframe(version=params.version)
+        return dataset
 
 
 class DataSplitterStepParameters(BaseParameters):
