@@ -33,7 +33,6 @@ from steps.data_loaders import (
     data_splitter,
 )
 from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
-from steps.data_preprocessors import data_preprocessor
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
     model_train_appraiser,
@@ -46,7 +45,12 @@ from steps.model_loaders import (
     trained_model_loader,
 )
 
-from steps.model_trainers import DecisionTreeTrainerParams, SVCTrainerParams, decision_tree_trainer, svc_trainer
+from steps.model_trainers import (
+    DecisionTreeTrainerParams,
+    SVCTrainerParams,
+    decision_tree_trainer,
+    svc_trainer,
+)
 
 from steps.data_validators import (
     data_drift_detector,
@@ -71,12 +75,13 @@ from utils.report_generators import (
 from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
 # These global parameters should be the same across all workflow stages.
-RANDOM_STATE = 42
+RANDOM_STATE = 23
 TRAIN_TEST_SPLIT = 0.2
-MIN_TRAIN_ACCURACY = 0.7
-MIN_TEST_ACCURACY = 0.7
+MIN_TRAIN_ACCURACY = 0.9
+MIN_TEST_ACCURACY = 0.9
 MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
 MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
+WARNINGS_AS_ERRORS = False
 
 
 class Pipeline(str, Enum):
@@ -123,7 +128,7 @@ def main(
     model_trainer = decision_tree_trainer(
         params=DecisionTreeTrainerParams(
             random_state=RANDOM_STATE,
-            max_depth=3,
+            max_depth=5,
         )
     )
 
@@ -198,10 +203,9 @@ def main(
         pipeline_instance = gitflow_training_pipeline(
             importer=data_loader(
                 params=DataLoaderStepParameters(
-                    version = dataset_version,
+                    version=dataset_version,
                 ),
             ),
-            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -222,6 +226,7 @@ def main(
                 params=ModelAppraisalStepParams(
                     train_accuracy_threshold=MIN_TRAIN_ACCURACY,
                     test_accuracy_threshold=MIN_TEST_ACCURACY,
+                    warnings_as_errors=WARNINGS_AS_ERRORS,
                     ignore_data_integrity_failures=ignore_checks,
                     ignore_train_test_data_drift_failures=ignore_checks,
                     ignore_model_evaluation_failures=ignore_checks,
@@ -234,10 +239,9 @@ def main(
         pipeline_instance = gitflow_extended_training_pipeline(
             importer=data_loader(
                 params=DataLoaderStepParameters(
-                    version = dataset_version,
+                    version=dataset_version,
                 ),
             ),
-            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -278,6 +282,7 @@ def main(
                     test_accuracy_threshold=MIN_TEST_ACCURACY,
                     max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
                     max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
+                    warnings_as_errors=WARNINGS_AS_ERRORS,
                     ignore_data_integrity_failures=ignore_checks,
                     ignore_train_test_data_drift_failures=ignore_checks,
                     ignore_model_evaluation_failures=ignore_checks,
@@ -291,10 +296,9 @@ def main(
         pipeline_instance = gitflow_end_to_end_pipeline(
             importer=data_loader(
                 params=DataLoaderStepParameters(
-                    version = dataset_version,
+                    version=dataset_version,
                 ),
             ),
-            data_preprocessor = data_preprocessor(),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -335,6 +339,7 @@ def main(
                     test_accuracy_threshold=MIN_TEST_ACCURACY,
                     max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
                     max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
+                    warnings_as_errors=WARNINGS_AS_ERRORS,
                     ignore_data_integrity_failures=ignore_checks,
                     ignore_train_test_data_drift_failures=ignore_checks,
                     ignore_model_evaluation_failures=ignore_checks,
@@ -444,7 +449,7 @@ if __name__ == "__main__":
         "--disable-caching",
         default=False,
         help="Disables caching for the pipeline. Defaults to False",
-        action='store_true',
+        action="store_true",
         required=False,
     )
     parser.add_argument(
@@ -452,7 +457,7 @@ if __name__ == "__main__":
         "--ignore-checks",
         default=False,
         help="Ignore model training checks. Defaults to False",
-        action='store_true',
+        action="store_true",
         required=False,
     )
     args = parser.parse_args()

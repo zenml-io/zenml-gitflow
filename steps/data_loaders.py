@@ -17,7 +17,7 @@
 from enum import Enum
 from typing import Optional
 import pandas as pd
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_breast_cancer, load_iris
 from sklearn.model_selection import train_test_split
 from zenml.steps import BaseParameters, Output, step
 import requests
@@ -62,8 +62,8 @@ def data_loader(
     """
     if params.version is None:
         # We use the original data shipped with scikit-learn for experimentation
-        iris = load_iris(as_frame=True).frame
-        return iris
+        dataset = load_breast_cancer(as_frame=True).frame
+        return dataset
 
     else:
         # We use data stored in the public S3 bucket for specified versions

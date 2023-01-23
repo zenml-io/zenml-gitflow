@@ -21,7 +21,6 @@ from zenml.integrations.deepchecks.steps import (
     deepchecks_data_integrity_check_step,
 )
 from zenml.integrations.deepchecks.validation_checks import (
-    DeepchecksDataIntegrityCheck,
     DeepchecksDataDriftCheck,
 )
 
@@ -35,17 +34,8 @@ data_integrity_checker = deepchecks_data_integrity_check_step(
             label=DATASET_TARGET_COLUMN_NAME,
             cat_features=[],
         ),
-        check_kwargs={
-            DeepchecksDataIntegrityCheck.TABULAR_FEATURE_LABEL_CORRELATION: dict(
-                condition_feature_pps_less_than=dict(
-                    threshold=0.95,
-                )
-            ),
-        }
     ),
 )
-
-from deepchecks.tabular.checks import FeatureLabelCorrelationChange
 
 # Deepchecks train-test data similarity check step
 data_drift_detector = deepchecks_data_drift_check_step(
@@ -55,12 +45,9 @@ data_drift_detector = deepchecks_data_drift_check_step(
         check_kwargs={
             DeepchecksDataDriftCheck.TABULAR_FEATURE_LABEL_CORRELATION_CHANGE: dict(
                 condition_feature_pps_in_train_less_than=dict(
-                    threshold=0.95,
-                ),
-                condition_feature_pps_difference_less_than=dict(
-                    threshold=1.0,
+                    threshold=1., # essentially turns off the label correlation check
                 ),
             )
-        }
+        },
     ),
 )

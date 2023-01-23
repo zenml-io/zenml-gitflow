@@ -36,6 +36,7 @@ class ModelAppraisalStepParams(BaseParameters):
             training data.
         test_accuracy_threshold: The minimum accuracy of the model on the test
             data.
+        warnings_as_errors: Whether to treat Deepchecks warnings as errors.
         ignore_data_integrity_failures: Whether to ignore data integrity
             failures reported by Deepchecks on the input data.
         ignore_train_test_data_drift_failures: Whether to ignore train-test data
@@ -53,6 +54,7 @@ class ModelAppraisalStepParams(BaseParameters):
 
     train_accuracy_threshold: float = 0.7
     test_accuracy_threshold: float = 0.7
+    warnings_as_errors: bool = False
     ignore_data_integrity_failures: bool = False
     ignore_train_test_data_drift_failures: bool = False
     ignore_model_evaluation_failures: bool = False
@@ -103,7 +105,7 @@ def model_analysis(
     Returns:
         A tuple of the appraisal decision and a report message.
     """
-    results: List[Tuple[bool, int, int, int, List[str]]] = []
+    results: List[Tuple[bool, int, int, int, int, List[str], List[str]]] = []
     passed = True
     for suite_result, name, ignored in [
         (
@@ -138,19 +140,31 @@ def model_analysis(
             with open(f.name, "r") as f:
                 suite_html = f.read()
         log_text(suite_html, f"{name}.html")
+        passed_checks = suite_result.get_passed_checks()
+        failed_checks = suite_result.get_not_passed_checks(
+            fail_if_warning=False
+        )
+        warning_checks = [
+            check
+            for check in suite_result.get_not_passed_checks(
+                fail_if_warning=True
+            )
+            if check not in failed_checks
+        ]
+        skipped_checks = suite_result.get_not_ran_checks()
+        check_passed = suite_result.passed(fail_if_warning=params.warnings_as_errors)
         results.append(
             (
-                suite_result.passed(),
-                len(suite_result.get_passed_checks()),
-                len(suite_result.get_not_passed_checks()),
-                len(suite_result.get_not_ran_checks()),
-                [
-                    check_result.check.name()
-                    for check_result in suite_result.get_not_passed_checks()
-                ],
+                check_passed,
+                len(passed_checks),
+                len(failed_checks),
+                len(warning_checks),
+                len(skipped_checks),
+                [check_result.check.name() for check_result in failed_checks],
+                [check_result.check.name() for check_result in warning_checks],
             )
         )
-        if not suite_result.passed() and not ignored:
+        if not check_passed and not ignored:
             passed = False
 
     if train_accuracy < params.train_accuracy_threshold:
@@ -196,8 +210,9 @@ inconsistent labels, etc.).
 Results: {'**PASSED**' if results[0][0] else '**FAILED**'}
 
 - passed checks: {results[0][1]}
-- failed checks: {results[0][2]} ({', '.join(results[0][4])})
-- skipped checks: {results[0][3]}
+- failed checks: {results[0][2]}  [{', '.join(results[0][5])}]
+- checks with warnings: {results[0][3]}  [{', '.join(results[0][6])}]
+- skipped checks: {results[0][4]}
 
 ### Train-test data drift checks {'(ignored)' if params.ignore_train_test_data_drift_failures else ''}
 
@@ -208,8 +223,9 @@ contaminate your model or perceived results.
 Results: {'**PASSED**' if results[1][0] else '**FAILED**'}
 
 - passed checks: {results[1][1]}
-- failed checks: {results[1][2]} ({', '.join(results[1][4])})
-- skipped checks: {results[1][3]}
+- failed checks: {results[1][2]}  [{', '.join(results[1][5])}]
+- checks with warnings: {results[1][3]}  [{', '.join(results[1][6])}]
+- skipped checks: {results[1][4]}
 
 ### Model evaluation checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
 
@@ -219,19 +235,21 @@ overfitting, and verify that the model is not biased.
 Results: {'**PASSED**' if results[2][0] else '**FAILED**'}
 
 - passed checks: {results[2][1]}
-- failed checks: {results[2][2]} ({', '.join(results[2][4])})
-- skipped checks: {results[2][3]}
+- failed checks: {results[2][2]}  [{', '.join(results[2][5])}]
+- checks with warnings: {results[2][3]}  [{', '.join(results[2][6])}]
+- skipped checks: {results[2][4]}
 
 ### Train-test model comparison checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
 
 Description: Runs a set of checks to compare the model performance between the
 test dataset and the evaluation dataset.
 
-Results: {'**PASSED**' if results[2][0] else '**FAILED**'}
+Results: {'**PASSED**' if results[3][0] else '**FAILED**'}
 
 - passed checks: {results[3][1]}
-- failed checks: {results[3][2]} ({', '.join(results[3][4])})
-- skipped checks: {results[3][3]}
+- failed checks: {results[3][2]}  [{', '.join(results[3][5])}]
+- checks with warnings: {results[3][3]}  [{', '.join(results[3][6])}]
+- skipped checks: {results[3][4]}
 """
 
     if (

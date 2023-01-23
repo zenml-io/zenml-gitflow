@@ -33,7 +33,7 @@ from utils.tracker_helper import get_tracker_name, log_metric
 
 class ModelScorerStepParams(BaseParameters):
     """Parameters for the model scorer step.
-    
+
     Attributes:
         accuracy_metric_name: The name of the metric used to log the accuracy
             in the experiment tracker.
@@ -47,11 +47,11 @@ def score_model(
     model: ClassifierMixin,
 ) -> float:
     """Calculate the model accuracy on a given dataset.
-    
+
     Args:
         dataset: The dataset to score the model on.
         model: The model to score.
-    
+
     Returns:
         The accuracy of the model on the dataset.
     """
@@ -78,7 +78,7 @@ def model_scorer(
         params: The parameters for the model scorer step.
         dataset: The dataset to score the model on.
         model: The model to score.
-    
+
     Returns:
         The accuracy of the model on the dataset.
     """
@@ -110,7 +110,7 @@ def optional_model_scorer(
         params: The parameters for the model scorer step.
         dataset: The dataset to score the model on.
         model: Optinoal model to score.
-    
+
     Returns:
         The accuracy of the model on the dataset. If no model is provided, 0.0
         is returned instead.

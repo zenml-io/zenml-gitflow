@@ -18,7 +18,6 @@ from zenml.pipelines import pipeline
 @pipeline
 def gitflow_end_to_end_pipeline(
     importer,
-    data_preprocessor,
     data_splitter,
     data_integrity_checker,
     train_test_data_drift_detector,
@@ -34,8 +33,7 @@ def gitflow_end_to_end_pipeline(
 ):
     """Train and serve a new model if it performs better than the model
     currently served."""
-    imported_data = importer()
-    data = data_preprocessor(dataset=imported_data)
+    data = importer()
     served_model = served_model_loader()
     data_integrity_report = data_integrity_checker(dataset=data)
     train_dataset, test_dataset = data_splitter(data)
