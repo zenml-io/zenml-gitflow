@@ -26,10 +26,9 @@ from pipelines import (
 )
 
 from steps.data_loaders import (
+    DataLoaderStepParameters,
     DataSplitterStepParameters,
-    development_data_loader,
-    production_data_loader,
-    staging_data_loader,
+    DataVersion, 
     data_loader,
     data_splitter,
 )
@@ -46,7 +45,7 @@ from steps.model_loaders import (
     trained_model_loader,
 )
 
-from steps.model_trainers import TrainerParams, svc_trainer
+from steps.model_trainers import SVCTrainerParams, svc_trainer
 
 from steps.data_validators import (
     data_drift_detector,
@@ -59,6 +58,7 @@ from steps.model_evaluators import (
     optional_model_scorer,
     train_test_model_evaluator,
 )
+from zenml.enums import ExecutionStatus
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.integrations.deepchecks import DeepchecksIntegration
 from utils.kubeflow_helper import get_kubeflow_settings
@@ -69,7 +69,7 @@ from utils.report_generators import (
 )
 from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
-
+# These global parameters should be the same across all workflow stages.
 RANDOM_STATE = 38
 TRAIN_TEST_SPLIT = 0.2
 MIN_TRAIN_ACCURACY = 0.9
@@ -91,6 +91,7 @@ def main(
     ignore_checks: bool = False,
     requirements_file: str = "requirements.txt",
     model_name: str = "model",
+    dataset_version: DataVersion = DataVersion.EXPERIMENTATION,
 ):
     """Main runner for all pipelines.
 
@@ -100,7 +101,10 @@ def main(
         ignore_checks: Whether to ignore model appraisal checks. Defaults to False.
         requirements_file: The requirements file to use to ensure reproducibility.
             Defaults to "requirements.txt".
-        model_name: The name of the model to use. Defaults to "model".
+        model_name: The name to use for the trained/deployed model. Defaults to
+            "model".
+        dataset_version: The dataset version to use. Defaults to
+            DataVersion.EXPERIMENTATION.
     """
 
     settings = {}
@@ -111,7 +115,7 @@ def main(
     docker_settings = DockerSettings(
         install_stack_requirements=False,
         requirements=requirements_file,
-        apt_packages=DeepchecksIntegration.APT_PACKAGES, # for Deepchecks
+        apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
 
@@ -184,7 +188,11 @@ def main(
     if pipeline_name == Pipeline.TRAIN:
 
         pipeline_instance = gitflow_training_pipeline(
-            importer=data_loader(),
+            importer=data_loader(
+                params=DataLoaderStepParameters(
+                    version = dataset_version,
+                ),
+            ),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -215,7 +223,11 @@ def main(
     elif pipeline_name == Pipeline.PRE_DEPLOY:
 
         pipeline_instance = gitflow_extended_training_pipeline(
-            importer=data_loader(),
+            importer=data_loader(
+                params=DataLoaderStepParameters(
+                    version = dataset_version,
+                ),
+            ),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -267,7 +279,11 @@ def main(
     elif pipeline_name == Pipeline.END_TO_END:
 
         pipeline_instance = gitflow_end_to_end_pipeline(
-            importer=data_loader(),
+            importer=data_loader(
+                params=DataLoaderStepParameters(
+                    version = dataset_version,
+                ),
+            ),
             data_splitter=data_splitter(
                 params=DataSplitterStepParameters(
                     test_size=TRAIN_TEST_SPLIT,
@@ -324,6 +340,18 @@ def main(
     pipeline_instance.run(settings=settings, **pipeline_args)
 
     pipeline_run = pipeline_instance.get_runs()[-1]
+
+    if pipeline_run.status == ExecutionStatus.FAILED:
+        print("Pipeline failed. Check the logs for more details.")
+        exit(1)
+    elif pipeline_run.status == ExecutionStatus.RUNNING:
+        print(
+            "Pipeline is still running. The post-execution phase cannot "
+            "proceed. Please make sure you use an orchestrator with a "
+            "synchronous mode of execution."
+        )
+        exit(1)
+
     data_integrity_step = pipeline_run.get_step(step="data_integrity_checker")
     data_drift_step = pipeline_run.get_step(
         step="train_test_data_drift_detector"
@@ -383,6 +411,15 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
+        "-d",
+        "--dataset",
+        default=DataVersion.EXPERIMENTATION,
+        help="Dataset to use for training. One of `experimentation`, "
+        "`staging`, and `production`. Defaults to `experimentation`.",
+        type=DataVersion,
+        required=False,
+    )
+    parser.add_argument(
         "-r",
         "--requirements",
         default="requirements.txt",
@@ -392,7 +429,7 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "-d",
+        "-dc",
         "--disable-caching",
         default=False,
         help="Disables caching for the pipeline. Defaults to False",
@@ -414,6 +451,11 @@ if __name__ == "__main__":
         Pipeline.PRE_DEPLOY,
         Pipeline.END_TO_END,
     ]
+    assert args.dataset in [
+        DataVersion.EXPERIMENTATION,
+        DataVersion.STAGING,
+        DataVersion.PRODUCTION,
+    ]
     assert isinstance(args.disable_caching, bool)
     assert isinstance(args.ignore_checks, bool)
     main(
@@ -422,4 +464,5 @@ if __name__ == "__main__":
         ignore_checks=args.ignore_checks,
         requirements_file=args.requirements,
         model_name=args.model,
+        dataset_version=args.dataset,
     )

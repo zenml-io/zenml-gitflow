@@ -12,6 +12,9 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
+"""Helper functions used to load models generated and tracked in various stages
+of the pipeline."""
+
 from sklearn.base import ClassifierMixin
 from typing import Optional, Tuple
 from zenml.client import Client
@@ -28,7 +31,13 @@ def load_deployed_model(
 
     Args:
         model_name: The name of the model to load.
-        step_name: The name of the pipeline step that was used to deploy the model.
+        step_name: The name of the pipeline step that was used to deploy the
+            model.
+    
+    Returns:
+        A tuple containing the model deployment service and the loaded model.
+        If no model with the given name is currently deployed, the tuple will
+        contain None for both values.
     """
 
     model_deployer = Client().active_stack.model_deployer
@@ -68,7 +77,16 @@ def load_trained_model(
     step_name: str,
     output_name: Optional[str] = None,
 ) -> Optional[ClassifierMixin]:
-    """Load and return the model trained by the last training pipeline run."""
+    """Load and return the model trained by the last training pipeline run.
+    
+    Args:
+        pipeline_name: The name of the training pipeline.
+        step_name: The name of the pipeline step that was used to train the
+            model.
+        output_name: The name of the output of the pipeline step that was used
+            to train the model. If None, the first output of the step will be
+            used.
+    """
 
     pipeline = get_pipeline(pipeline_name)
     if pipeline is None:

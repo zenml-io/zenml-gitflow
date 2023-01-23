@@ -12,6 +12,8 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
+"""Data loader steps for the Iris classification pipeline."""
+
 from enum import Enum
 import pandas as pd
 from sklearn.datasets import load_iris
@@ -21,6 +23,7 @@ import requests
 
 
 DATASET_TARGET_COLUMN_NAME = "target"
+
 
 def download_dataframe(
     bucket: str = "zenmlpublicdata",
@@ -46,67 +49,21 @@ def download_dataframe(
     return df
 
 
-@step
-def development_data_loader() -> Output(
-    X_train=pd.DataFrame,
-    X_test=pd.DataFrame,
-    y_train=pd.Series,
-    y_test=pd.Series,
-):
-    """Load the local dataset."""
-    iris = load_iris(as_frame=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, shuffle=True, random_state=42
-    )
-    return X_train, X_test, y_train, y_test
+class DataVersion(str, Enum):
+    """Enum for data versions.
+    
+    This encodes the possible data versions that can be loaded by the
+    various pipelines:
 
+    - EXPERIMENTATION: Data version used for local experimentation.
+    - STAGING: Data version used for staging changes before they are
+        deployed to production.
+    - PRODUCTION: Data version used in production.
+    """
 
-@step(enable_cache=False)
-def staging_data_loader() -> Output(
-    X_train=pd.DataFrame,
-    X_test=pd.DataFrame,
-    y_train=pd.Series,
-    y_test=pd.Series,
-):
-    """Load the static staging dataset."""
-    X_train = download_dataframe(env="staging", df_name="X_train")
-    X_test = download_dataframe(env="staging", df_name="X_test")
-    y_train = download_dataframe(
-        env="staging", df_name="y_train", df_type="series"
-    )
-    y_test = download_dataframe(
-        env="staging", df_name="y_test", df_type="series"
-    )
-
-    return X_train, X_test, y_train, y_test
-
-
-@step(enable_cache=False)
-def production_data_loader() -> Output(
-    X_train=pd.DataFrame,
-    X_test=pd.DataFrame,
-    y_train=pd.Series,
-    y_test=pd.Series,
-):
-    """Load the production production dataset."""
-    X_train = download_dataframe(env="production", df_name="X_train")
-    X_test = download_dataframe(env="production", df_name="X_test")
-    y_train = download_dataframe(
-        env="production", df_name="y_train", df_type="series"
-    )
-    y_test = download_dataframe(
-        env="production", df_name="y_test", df_type="series"
-    )
-
-    return X_train, X_test, y_train, y_test
-
-
-class DataVersion(int, Enum):
-    """Enum for data versions."""
-
-    # The initial data version is the sklearn dataset
-    INITIAL = 0
-    LATEST = -1
+    EXPERIMENTATION = "experimentation"
+    STAGING = "staging"
+    PRODUCTION = "production"
 
 
 class DataLoaderStepParameters(BaseParameters):
@@ -117,35 +74,41 @@ class DataLoaderStepParameters(BaseParameters):
             one of the DataVersion enum values.
     """
 
-    version: int = 0
+    version: DataVersion = DataVersion.EXPERIMENTATION
 
 
 @step
 def data_loader(
     params: DataLoaderStepParameters,
 ) -> pd.DataFrame:
-    """Load the dataset with the indicated version."""
-    if params.version == DataVersion.INITIAL.value:
-        # We use the data version zero (0) to denote the initial data
+    """Load the dataset with the indicated version.
+    
+    Args:
+        params: Parameters for the data_loader step (data version to load).
+
+    Returns:
+        The dataset with the indicated version.
+    """
+    if params.version == DataVersion.EXPERIMENTATION:
+        # We use the original data shipped with scikit-learn for experimentation
         iris = load_iris(as_frame=True).frame
         return iris
 
-    elif params.version == DataVersion.LATEST.value:
-        # We use the data version -1 to denote the latest data
-        X_train = download_dataframe(env="production", df_name="X_train")
-        X_test = download_dataframe(env="production", df_name="X_test")
-        y_train = download_dataframe(
-            env="production", df_name="y_train", df_type="series"
-        )
-        y_test = download_dataframe(
-            env="production", df_name="y_test", df_type="series"
-        )
-        return X_train + X_test + y_train + y_test
     else:
-        raise ValueError(
-            f"Version {params.version} is not found. "
-            f"Please use one of the following: {DataVersion}"
+        # We use data stored in the public S3 bucket for staging and
+        # production
+        if params.version == DataVersion.STAGING:
+            env = "staging"
+        else:
+            env = "production"
+
+        X_train = download_dataframe(env=env, df_name="X_train")
+        X_test = download_dataframe(env=env, df_name="X_test")
+        y_train = download_dataframe(
+            env=env, df_name="y_train", df_type="series"
         )
+        y_test = download_dataframe(env=env, df_name="y_test", df_type="series")
+        return X_train + X_test + y_train + y_test
 
 
 class DataSplitterStepParameters(BaseParameters):
@@ -166,12 +129,19 @@ class DataSplitterStepParameters(BaseParameters):
 
 @step
 def data_splitter(
-    dataset: pd.DataFrame, params: DataSplitterStepParameters
-) -> Output(
-    train=pd.DataFrame,
-    test=pd.DataFrame,
-):
-    """Load the local dataset."""
+    params: DataSplitterStepParameters,
+    dataset: pd.DataFrame, 
+) -> Output(train=pd.DataFrame, test=pd.DataFrame,):
+    """Split the dataset into train and test (validation) subsets.
+
+    Args:
+        params: Parameters for the data_splitter step (split proportions,
+            shuffling, random state).
+        dataset: The dataset to split.
+    
+    Returns:
+        The train and test (validation) subsets of the dataset.
+    """
     train, test = train_test_split(
         dataset,
         test_size=params.test_size,

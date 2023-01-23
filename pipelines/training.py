@@ -27,7 +27,7 @@ def gitflow_training_pipeline(
     train_test_model_evaluator,
     model_appraiser,
 ):
-    """Train and evaluate a new model."""
+    """Pipeline that trains and evaluates a new model."""
     data = importer()
     data_integrity_report = data_integrity_checker(dataset=data)
     train_dataset, test_dataset = data_splitter(data)
@@ -70,7 +70,7 @@ def gitflow_extended_training_pipeline(
     served_model_test_scorer,
     model_appraiser,
 ):
-    """Train a new model and evaluate if better than the one currently served."""
+    """Train a new model and compare it with the one currently served."""
     data = importer()
     served_model = served_model_loader()
     data_integrity_report = data_integrity_checker(dataset=data)

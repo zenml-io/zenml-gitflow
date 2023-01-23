@@ -31,7 +31,8 @@ def gitflow_end_to_end_pipeline(
     model_appraiser,
     model_deployer,
 ):
-    """Train and serve a new model if better than the one currently served."""
+    """Train and serve a new model if it performs better than the model
+    currently served."""
     data = importer()
     served_model = served_model_loader()
     data_integrity_report = data_integrity_checker(dataset=data)

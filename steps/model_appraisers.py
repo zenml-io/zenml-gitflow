@@ -12,6 +12,10 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
+"""Model appraisal steps used to analyze the model training and evaluation
+results, to generate human-readable reports, and to make a decision about
+serving the model."""
+
 import tempfile
 from typing import List, Optional, Tuple, Union
 from zenml.steps import BaseParameters, Output, step
@@ -25,7 +29,27 @@ from deepchecks import SuiteResult
 
 
 class ModelAppraisalStepParams(BaseParameters):
-    """Parameters for the training appraisal step."""
+    """Parameters for the model training appraisal step.
+
+    Attributes:
+        train_accuracy_threshold: The minimum accuracy of the model on the
+            training data.
+        test_accuracy_threshold: The minimum accuracy of the model on the test
+            data.
+        ignore_data_integrity_failures: Whether to ignore data integrity
+            failures reported by Deepchecks on the input data.
+        ignore_train_test_data_drift_failures: Whether to ignore train-test data
+            drift check failures reported by Deepchecks on the train/test
+            datasets.
+        ignore_model_evaluation_failures: Whether to ignore model evaluation
+            failures reported by Deepchecks on the model.
+        ignore_reference_model: Whether to ignore the reference model in the
+            model appraisal.
+        max_train_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the training data.
+        max_test_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the test data.
+    """
 
     train_accuracy_threshold: float = 0.9
     test_accuracy_threshold: float = 0.8
@@ -48,16 +72,19 @@ def model_analysis(
     reference_train_accuracy: Optional[float] = None,
     reference_test_accuracy: Optional[float] = None,
 ) -> Tuple[bool, str]:
-    """Analyze the model training and evaluation results and make a decision
-    about serving the model.
+    """Analyze the model training and evaluation results, generate a report and
+    make a decision about serving the model.
 
     The gathered results are analyzed and a decision is made about whether the
     model should be served or not. The decision is based on the accuracy of the
     model on the training and test data, the data integrity report, the train-test
     data drift report, the model evaluation report, and the train-test model
     evaluation report. If accuracy values are provided for a reference model,
-    the difference between the reference model and the trained model is also
-    taken into account.
+    the performance difference between the reference model and the trained model
+    is also taken into account.
+
+    The function also generates a human-readable report that is returned
+    alongside the decision.
 
     Args:
         params: Training appraisal configuration parameters.
@@ -76,7 +103,6 @@ def model_analysis(
     Returns:
         A tuple of the appraisal decision and a report message.
     """
-
     results: List[Tuple[bool, int, int, int, List[str]]] = []
     passed = True
     for suite_result, name, ignored in [
@@ -274,8 +300,33 @@ def model_train_appraiser(
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
 ) -> Output(result=bool, report=str):
-    """Analyze the training results and make a decision about the model."""
+    """Analyze the training results, generate a report and make a decision about
+    serving the model.
 
+    This step is the last step in the model training pipeline. It analyzes the
+    results collected from various steps in the pipeline (e.g model and data
+    Deepchecks reports, model scoring accuracy values) and makes a decision
+    regarding the model quality and whether it should be served or not.
+    It also generates a report that summarizes the results of the analysis.
+
+    Args:
+        params: Model training appraisal step parameters (e.g. thresholds,
+            silenced checks, etc.).
+        train_accuracy: Accuracy of the trained model on the training dataset.
+        test_accuracy: Accuracy of the trained model on the evaluation dataset.
+        data_integrity_report: Data integrity report computed by Deepchecks on
+            the input data.
+        train_test_data_drift_report: Train-test data drift report computed by
+            Deepchecks on the train/test datasets.
+        model_evaluation_report: Model evaluation report computed by Deepchecks
+            on the input model.
+        train_test_model_evaluation_report: Train-test model evaluation report
+            computed by Deepchecks on the input model and the train/test
+            datasets.
+
+    Returns:
+        A tuple of the model appraisal result and the model appraisal report.
+    """
     return model_analysis(
         params=params,
         train_accuracy=train_accuracy,
@@ -303,7 +354,39 @@ def model_train_reference_appraiser(
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
 ) -> Output(result=bool, report=str):
-    """Analyze the training results and make a decision about the model."""
+    """Analyze the training results, generate a report and make a decision about
+    serving the model.
+
+    This is a variant of the model_train_appraiser step that also compares the
+    trained model against a reference model (e.g. that is already deployed in
+    production). It analyzes the
+    results collected from various steps in the pipeline (e.g model and data
+    Deepchecks reports, model scoring accuracy values) and makes a decision
+    regarding the model quality and whether it should be served or not.
+    It also generates a report that summarizes the results of the analysis.
+
+    Args:
+        params: Model training appraisal step parameters (e.g. thresholds,
+            silenced checks, etc.).
+        train_accuracy: Accuracy of the trained model on the training dataset.
+        test_accuracy: Accuracy of the trained model on the evaluation dataset.
+        reference_train_accuracy: Accuracy of the reference model on the
+            training dataset.
+        reference_test_accuracy: Accuracy of the reference model on the
+            evaluation dataset.
+        data_integrity_report: Data integrity report computed by Deepchecks on
+            the input data.
+        train_test_data_drift_report: Train-test data drift report computed by
+            Deepchecks on the train/test datasets.
+        model_evaluation_report: Model evaluation report computed by Deepchecks
+            on the input model.
+        train_test_model_evaluation_report: Train-test model evaluation report
+            computed by Deepchecks on the input model and the train/test
+            datasets.
+
+    Returns:
+        A tuple of the model appraisal result and the model appraisal report.
+    """
 
     return model_analysis(
         params=params,
