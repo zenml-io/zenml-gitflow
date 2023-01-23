@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      GCR_PIPELINE_IMAGE_NAME: ${{ secrets.GCR_PIPELINE_IMAGE_NAME }}
       KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_STAGING_USERNAME }}
       KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_STAGING_PASSWORD }}
       KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_STAGING_NAMESPACE }}
@@ -73,6 +74,11 @@ jobs:
         run: |
           zenml stack set gcp_gitflow_stack
           zenml stack up
+
+      - name: Pull previous image for caching
+        run: |
+          docker pull $GCR_PIPELINE_IMAGE_NAME:gitflow_training_pipeline
+        continue-on-error: true
 
       - name: Run pipeline
         run: |
