@@ -30,8 +30,8 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
 
-       - id: install-kubectl
-         uses: azure/setup-kubectl@v3
+      - id: install-kubectl
+        uses: azure/setup-kubectl@v3
  
       - name: Authenticate docker
         run: |
