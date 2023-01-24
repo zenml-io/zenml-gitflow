@@ -92,7 +92,7 @@ jobs:
       - name: PR comment with data integrity report
         uses: thollander/actions-comment-pull-request@v2
         with:
-          file: ./data_integrity_report.pdf
+          filePath: ./data_integrity_report.pdf
           comment_tag: data_integrity_report
           mode: recreate
           create_if_not_exists: true
@@ -100,7 +100,7 @@ jobs:
       - name: PR comment with data drift report
         uses: thollander/actions-comment-pull-request@v2
         with:
-          file: ./data_drift_report.pdf
+          filePath: ./data_drift_report.pdf
           comment_tag: data_drift_report
           mode: recreate
           create_if_not_exists: true
@@ -108,7 +108,7 @@ jobs:
       - name: PR comment with model evaluation report
         uses: thollander/actions-comment-pull-request@v2
         with:
-          file: ./model_evaluator_report.pdf
+          filePath: ./model_evaluator_report.pdf
           comment_tag: model_evaluator_report
           mode: recreate
           create_if_not_exists: true
@@ -116,7 +116,7 @@ jobs:
       - name: PR comment with train test model evaluator report
         uses: thollander/actions-comment-pull-request@v2
         with:
-          file: ./train_test_model_evaluator_report.pdf
+          filePath: ./train_test_model_evaluator_report.pdf
           comment_tag: train_test_model_evaluator_report
           mode: recreate
           create_if_not_exists: true
