@@ -77,6 +77,6 @@ jobs:
           python run.py \
             --pipeline end-to-end \
             --requirements requirements-aws.txt \
-            --model iris_classifier \
+            --model iris-classifier \
             --dataset production
 
