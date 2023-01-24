@@ -85,9 +85,9 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: ${{ steps.report.outputs.content }}
-        comment_tag: training_report
-        mode: recreate
-        create_if_not_exists: true
+          comment_tag: training_report
+          mode: recreate
+          create_if_not_exists: true
 
       - name: Post training job artifacts
         uses: gavv/pull-request-artifacts@v1.0.0
