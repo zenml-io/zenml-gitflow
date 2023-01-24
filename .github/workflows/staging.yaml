@@ -1,24 +1,23 @@
-name: CI
+name: staging
 on:
   pull_request:
     branches:
       - main
     
 jobs:
-  run-staging-pipeline:
+  run-staging-workflow:
     runs-on: ubuntu-latest
     env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-      KUBEFLOW_USERNAME: ${{ secrets.KUBEFLOW_STAGING_USERNAME }}
-      KUBEFLOW_PASSWORD: ${{ secrets.KUBEFLOW_STAGING_PASSWORD }}
-      KUBEFLOW_NAMESPACE: ${{ secrets.KUBEFLOW_STAGING_NAMESPACE }}
       ZENML_USERNAME: ${{ secrets.ZENML_USERNAME }}
       ZENML_PASSWORD: ${{ secrets.ZENML_PASSWORD }}
       ZENML_HOST: ${{ secrets.ZENML_HOST }}
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
-      ZENML_STAGING_PIPELINE_IMAGE_NAME: ${{ secrets.ZENML_STAGING_PIPELINE_IMAGE_NAME }}
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -31,15 +30,13 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
 
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
-        
       - id: install-kubectl
         uses: azure/setup-kubectl@v3
-
+ 
       - name: Authenticate docker
         run: |
           gcloud auth configure-docker --project zenml-demos
+        
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
@@ -47,25 +44,20 @@ jobs:
       - uses: syphar/restore-virtualenv@v1
         id: cache-virtualenv
         with:
-          requirement_files: 'requirements.txt'
+          requirement_files: 'requirements-aws.txt'
 
       - uses: syphar/restore-pip-download-cache@v1
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         with:
-          requirement_files: 'requirements.txt'
+          requirement_files: 'requirements-gcp.txt'
           
       - name: Install requirements
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements-gcp.txt
 
-      - name: Install staging requirements
-        run: |
-          pip install gcsfs google-cloud-secret-manager google-cloud-aiplatform>=1.11.0
-
-      - name: Install google-auth 2.13.0
-        run: |
-          pip install google-auth==2.13.0
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install wkhtmltopdf
 
       - name: Connect to ZenML server
         run: |
@@ -73,13 +65,26 @@ jobs:
 
       - name: Set stack
         run: |
-          zenml stack set vertex_gitflow_stack
+          zenml stack set gcp_gitflow_stack
           zenml stack up
-        
-      - name: Pull previous image for caching
-        run: |
-          docker pull $ZENML_STAGING_PIPELINE_IMAGE_NAME
 
       - name: Run pipeline
         run: |
-          python run.py --stage staging
+          python run.py \
+            --pipeline train \
+            --requirements requirements-gcp.txt \
+            --dataset staging
+
+      - name: Read training report
+        id: report
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./model_train_results.md
+
+      - name: PR comment with training report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: ./model_train_results.md
+          comment_tag: training_report
+          mode: recreate
+          create_if_not_exists: true

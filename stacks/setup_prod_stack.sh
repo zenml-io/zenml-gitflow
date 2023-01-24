@@ -15,6 +15,7 @@ zenml orchestrator register multi_tenant_kubeflow \
 
 zenml artifact-store register s3_store -f s3 --path=s3://zenfiles
 
+zenml image-builder register local_image_builder -f local
 zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
 
 # For GKE clusters, the host is the GKE cluster IP address.
@@ -26,20 +27,21 @@ export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -
 export INGRESS_URL="http://${INGRESS_HOST}:${INGRESS_PORT}"
 
 zenml model-deployer register kserve_s3 --flavor=kserve --kubernetes_context=kubeflowmultitenant  --kubernetes_namespace=zenml-workloads --base_url=$INGRESS_URL --secret=kservesecret 
-zenml data-validator register evidently_data_validator --flavor=evidently
+zenml data-validator register deepchecks_data_validator --flavor=deepchecks
 
-zenml stack register kubeflow_gitflow_stack \
+zenml stack register aws_gitflow_stack \
     -a s3_store \
     -c ecr_registry \
     -o multi_tenant_kubeflow \
     -x aws_secrets_manager \
     -d kserve_s3 \
-    -dv evidently_data_validator \
-    -e aws_mlflow_tracker || \
+    -dv deepchecks_data_validator \
+    -e aws_mlflow_tracker \
+    -i local_image_builder || \
   msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_gitflow_stack"
 
-zenml stack set kubeflow_gitflow_stack
-zenml stack share kubeflow_gitflow_stack
+zenml stack set aws_gitflow_stack
+zenml stack share aws_gitflow_stack
 
 zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 

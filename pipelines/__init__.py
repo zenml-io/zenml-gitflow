@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2022. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from pipelines.development_pipeline import development_pipeline
-from pipelines.production_pipeline import prod_train_and_deploy_pipeline
-from pipelines.staging_pipeline import staging_train_and_deploy_pipeline
+from pipelines.training import (
+    gitflow_training_pipeline,
+    gitflow_extended_training_pipeline,
+)
+from pipelines.end_to_end import gitflow_end_to_end_pipeline
