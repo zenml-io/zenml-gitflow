@@ -84,39 +84,7 @@ jobs:
       - name: PR comment with training report
         uses: thollander/actions-comment-pull-request@v2
         with:
-          message: ${{ steps.report.outputs.content }}
+          filePath: ./model_train_results.md
           comment_tag: training_report
-          mode: recreate
-          create_if_not_exists: true
-
-      - name: PR comment with data integrity report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: ./data_integrity_report.pdf
-          comment_tag: data_integrity_report
-          mode: recreate
-          create_if_not_exists: true
-
-      - name: PR comment with data drift report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: ./data_drift_report.pdf
-          comment_tag: data_drift_report
-          mode: recreate
-          create_if_not_exists: true
-
-      - name: PR comment with model evaluation report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: ./model_evaluator_report.pdf
-          comment_tag: model_evaluator_report
-          mode: recreate
-          create_if_not_exists: true
-
-      - name: PR comment with train test model evaluator report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: ./train_test_model_evaluator_report.pdf
-          comment_tag: train_test_model_evaluator_report
           mode: recreate
           create_if_not_exists: true
