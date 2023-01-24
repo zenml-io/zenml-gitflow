@@ -15,6 +15,7 @@ zenml orchestrator register multi_tenant_kubeflow \
 
 zenml artifact-store register s3_store -f s3 --path=s3://zenfiles
 
+zenml image-builder register local_image_builder -f local
 zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
 
 # For GKE clusters, the host is the GKE cluster IP address.
@@ -35,7 +36,8 @@ zenml stack register aws_gitflow_stack \
     -x aws_secrets_manager \
     -d kserve_s3 \
     -dv deepchecks_data_validator \
-    -e aws_mlflow_tracker || \
+    -e aws_mlflow_tracker \
+    -i local_image_builder || \
   msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_gitflow_stack"
 
 zenml stack set aws_gitflow_stack

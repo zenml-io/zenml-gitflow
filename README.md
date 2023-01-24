@@ -66,14 +66,14 @@ processing steps on their local machine.
 Once the data scientist thinks they have improved the pipeline, they create a 
 pull request for his branch on GitHub. This automatically triggers a GitHub Action 
 that will run the same pipeline in the staging environment (e.g. a pipeline 
-running on GCP Vertex AI), potentially with different test data. As long as the 
-pipeline does not run successfully in the staging environment, the PR cannot be 
-merged.
+running on a cloud stack in GCP), potentially with different test data. As long
+as the  pipeline does not run successfully in the staging environment, the PR
+cannot be  merged.
 
 <img src="_assets/pipeline_staging.png" alt="Pipeline with staging stack" width="500"/>
 
 Once the PR has been reviewed and passes all checks, the branch is merged into 
-develop. This automatically triggers another GitHub Action that now runs a 
+main. This automatically triggers another GitHub Action that now runs a 
 pipeline in the production environment, which trains the same model on 
 production data, and then automatically deploys it.
 
@@ -97,8 +97,6 @@ KUBEFLOW_PRODUCTION_USERNAME
 KUBEFLOW_USERNAME
 ZENML_HOST
 ZENML_PASSWORD
-ZENML_PROD_PIPELINE_IMAGE_NAME
-ZENML_STAGING_PIPELINE_IMAGE_NAME
 ZENML_USERNAME
 
 # Currently not used but WIP
@@ -117,7 +115,7 @@ ZENML_STAGING_STACK
 git clone git@github.com:zenml-io/zenml-gitflow.git
 ```
 
-2. Install requirements
+2. Install local requirements
 
 ```
 pip install -r requirements.txt

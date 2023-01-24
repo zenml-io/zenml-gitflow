@@ -17,4 +17,3 @@ from pipelines.training import (
     gitflow_extended_training_pipeline,
 )
 from pipelines.end_to_end import gitflow_end_to_end_pipeline
-from pipelines.etl import gitflow_data_generation_pipeline
