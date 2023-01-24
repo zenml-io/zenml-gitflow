@@ -2,6 +2,14 @@
 #
 #  `zenml integration export-requirements sklearn mlflow deepchecks`
 #
+# Use this file to generate the requirements.txt file with:
+#
+#  `pip-compile -v -o requirements.txt requirements-base.in requirements-local.in  --resolver=backtracking`
+#
+# Hint: in case of conflicts, try commenting out some these requirements (e.g.
+# deepchecks and torchvision), run the command again, and then uncomment them
+# and run it a second time.
+#
 scikit-learn
 mlflow>=1.2.0,<1.26.0
 mlserver>=0.5.3

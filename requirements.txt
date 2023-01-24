@@ -585,7 +585,10 @@ sqlalchemy==1.4.41
     # via
     #   alembic
     #   mlflow
+    #   sqlalchemy-utils
     #   sqlmodel
+sqlalchemy-utils==0.38.3
+    # via zenml
 sqlalchemy2-stubs==0.0.2a32
     # via sqlmodel
 sqlmodel==0.0.8
@@ -701,7 +704,7 @@ widgetsnbextension==3.6.1
     # via ipywidgets
 yarl==1.8.2
     # via aiohttp
-zenml==0.31.1
+zenml==0.32.0
     # via -r requirements-base.in
 zipp==3.11.0
     # via
