@@ -17,6 +17,7 @@ jobs:
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -97,4 +98,3 @@ jobs:
             data_drift_report.pdf
             model_evaluator_report.pdf
             test_train_model_evaluator_report.pdf
-            
