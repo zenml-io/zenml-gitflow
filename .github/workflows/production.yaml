@@ -70,7 +70,6 @@ jobs:
       - name: Set stack
         run: |
           zenml stack set aws_gitflow_stack
-          zenml stack up
         
       - name: Run pipeline
         run: |
