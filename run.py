@@ -22,7 +22,6 @@ from zenml.config.docker_settings import PythonEnvironmentExportMethod
 
 from pipelines import (
     gitflow_training_pipeline,
-    gitflow_extended_training_pipeline,
     gitflow_end_to_end_pipeline,
 )
 
@@ -87,7 +86,6 @@ WARNINGS_AS_ERRORS = False
 class Pipeline(str, Enum):
 
     TRAIN = "train"
-    PRE_DEPLOY = "pre-deploy"
     END_TO_END = "end-to-end"
 
 
@@ -133,7 +131,7 @@ def main(
     )
 
     client = Client()
-    if pipeline_name in [Pipeline.PRE_DEPLOY, Pipeline.END_TO_END]:
+    if pipeline_name == Pipeline.END_TO_END:
         model_deployer = client.active_stack.model_deployer
         if model_deployer is None:
             raise ValueError(
@@ -230,63 +228,6 @@ def main(
                     ignore_data_integrity_failures=ignore_checks,
                     ignore_train_test_data_drift_failures=ignore_checks,
                     ignore_model_evaluation_failures=ignore_checks,
-                )
-            ),
-        )
-
-    elif pipeline_name == Pipeline.PRE_DEPLOY:
-
-        pipeline_instance = gitflow_extended_training_pipeline(
-            importer=data_loader(
-                params=DataLoaderStepParameters(
-                    version=dataset_version,
-                ),
-            ),
-            data_splitter=data_splitter(
-                params=DataSplitterStepParameters(
-                    test_size=TRAIN_TEST_SPLIT,
-                    random_state=RANDOM_STATE,
-                )
-            ),
-            data_integrity_checker=data_integrity_checker,
-            train_test_data_drift_detector=data_drift_detector,
-            model_trainer=model_trainer,
-            model_scorer=model_scorer(
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="test_accuracy",
-                )
-            ),
-            model_evaluator=model_evaluator,
-            train_test_model_evaluator=train_test_model_evaluator,
-            served_model_loader=served_model_loader(
-                params=ServedModelLoaderStepParameters(
-                    model_name=model_name,
-                    step_name="model_deployer",
-                )
-            ),
-            served_model_train_scorer=optional_model_scorer(
-                name="served_model_train_scorer",
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="reference_train_accuracy",
-                ),
-            ),
-            served_model_test_scorer=optional_model_scorer(
-                name="served_model_test_scorer",
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="reference_test_accuracy",
-                ),
-            ),
-            model_appraiser=model_train_reference_appraiser(
-                params=ModelAppraisalStepParams(
-                    train_accuracy_threshold=MIN_TRAIN_ACCURACY,
-                    test_accuracy_threshold=MIN_TEST_ACCURACY,
-                    max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
-                    max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
-                    warnings_as_errors=WARNINGS_AS_ERRORS,
-                    ignore_data_integrity_failures=ignore_checks,
-                    ignore_train_test_data_drift_failures=ignore_checks,
-                    ignore_model_evaluation_failures=ignore_checks,
-                    ignore_reference_model=ignore_checks,
                 )
             ),
         )
@@ -396,15 +337,20 @@ def main(
         DeepchecksVisualizer().visualize(model_evaluator_step)
         DeepchecksVisualizer().visualize(train_test_model_evaluator_step)
 
-        deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
-        deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")
-        deepcheck_suite_to_pdf(
-            model_evaluator_step, "model_evaluator_report.pdf"
-        )
-        deepcheck_suite_to_pdf(
-            train_test_model_evaluator_step,
-            "train_test_model_evaluator_report.pdf",
-        )
+        # To generate the Deepchecks reports as PDF files, uncomment the following lines:
+        #
+        # NOTE: you also need to install `wkhtmltopdf` on your machine for this
+        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`). 
+        #
+        # deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
+        # deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")
+        # deepcheck_suite_to_pdf(
+        #     model_evaluator_step, "model_evaluator_report.pdf"
+        # )
+        # deepcheck_suite_to_pdf(
+        #     train_test_model_evaluator_step,
+        #     "train_test_model_evaluator_report.pdf",
+        # )
 
 
 if __name__ == "__main__":
@@ -413,8 +359,8 @@ if __name__ == "__main__":
         "-p",
         "--pipeline",
         default="train",
-        help="Toggles which pipeline to run. One of `train`, "
-        "`pre-deploy`, and `end-to-end`. Defaults to `train`",
+        help="Toggles which pipeline to run. One of `train` and `end-to-end`. "
+        "Defaults to `train`",
         type=str,
         required=False,
     )
@@ -464,7 +410,6 @@ if __name__ == "__main__":
 
     assert args.pipeline in [
         Pipeline.TRAIN,
-        Pipeline.PRE_DEPLOY,
         Pipeline.END_TO_END,
     ]
     assert isinstance(args.disable_caching, bool)
