@@ -95,10 +95,10 @@ The pipeline implementations follow a set of best practices for MLOps summarized
 below:
 
 * **Experiment Tracking**: All experiments are logged with an experiment tracker
-(MLflow), which allows for easy comparison of different runs, models and
-quick access to and visualization of validation reports.
-* **Data and Model validation**: The pipelines include a set of Deepchecks
-powered steps that verify integrity of the data and evaluate the model after
+(MLflow), which allows for easy comparison of different runs and models and
+provides quick access to visualization and validation reports.
+* **Data and Model validation**: The pipelines include a set of Deepchecks-powered
+steps that verify integrity of the data and evaluate the model after
 training. The results are gathered, analyzed and then a report is generated with
 a summary of the findings and a suggested course of action. This provides useful
 insights into the quality of the data and the performance of the model and helps to
@@ -111,13 +111,13 @@ automatically using GitHub Actions. Only changes that pass all tests are merged
 into the main branch. This applies not only to the code itself, but also to
 the ML artifacts, such as the data and the model.
 * **Continuous Deployment**: When a change is merged into the main branch, it is
-automatically deployed to production using GitHub Actions. There are also
-additional checks in place to ensure that the model is not deployed if it
+automatically deployed to production using ZenML and GitHub Actions. There are also
+additional checks in place to ensure that the model is not deployed if it is
 not fit for production or performs worse than the model currently deployed.
 * **Software Dependency Management**: All software dependencies are managed
 in a way that guarantees full reproducibility and are automatically installed
-by ZenML the pipeline runtime environments. Python package versions are frozen
-and pinned to ensure that the same versions are used in all environments.
+by ZenML in the pipeline runtime environments. Python package versions are frozen
+and pinned to ensure that the pipeline runs are fully reproducible.
 * **Reproducible Randomness**: All randomness is controlled and seeded to ensure
 reproducibility and caching of the pipeline runs.
 
@@ -200,8 +200,8 @@ additional to an existing PR.
 2. this next part is automated with the help of GitHub Actions. A GitHub
 workflow is triggered automatically when PR code changes are detected. The
 workflow will run the same training pipeline as in the local setup, but this
-time it will use a remote ZenML server and a cloud ZenML stack consisting of the
-following:
+time it will use a different dataset as input, a remote ZenML server and a cloud
+ZenML stack consisting of the following:
 
 * a Vertex AI orchestrator
 * a GCS artifact store
@@ -260,7 +260,7 @@ zenml stack set gcp_gitflow_stack
 5. Run the staging workflow:
 
 ```
-python run.py --pipeline=end-to-end --requirements=requirements-gcp.txt --dataset staging
+python run.py --requirements=requirements-gcp.txt --dataset staging
 ```
 
 
@@ -369,18 +369,24 @@ managed by ZenML as integrations (e.g. deepchecks, scikit-learn, etc.).
 * `requirements-local.in` contains the requirements needed by the local stack.
 * `requirements-gcp.in` contains the requirements needed by the GCP stack.
 * `requirements-aws.in` contains the requirements needed by the AWS stack.
+* `requirements.txt` are frozen package requirements that you use in your
+local development workflow.
+* `requirements-gcp.txt` are frozen package requirements that you use in your
+GCP staging workflow.
+* `requirements-aws.txt` are frozen package requirements that you use in your
+AWS production workflow.
 
 ### 🏇 How to update requirements
 
 The frozen requirements files need to be updated whenever you make a change to
 the project dependencies. This includes the following:
 
-* when you add a new package to the project that is not covered by ZenML or a
-ZenML integration.
+* when you add, update or remove a new package to the project that is not
+covered by ZenML or a ZenML integration
 * when you update ZenML itself to a new version (which may also include updates
 to the ZenML integrations and their requirements)
 * when you add or remove a ZenML integration to/from the project (also reflected
-in the code changes or stacks that you use for different workflows)
+in the code changes or stacks that you use for the various workflows)
 
 Whenever one of these happens, you need to update the `requirements.in` files to
 reflect the changes.
