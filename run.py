@@ -123,10 +123,10 @@ def main(
     )
     settings["docker"] = docker_settings
 
-    model_trainer = svc_trainer(
-        params=SVCTrainerParams(
+    model_trainer = decision_tree_trainer(
+        params=DecisionTreeTrainerParams(
             random_state=RANDOM_STATE,
-            coef0=0.001,
+            max_depth=5,
         )
     )
 
