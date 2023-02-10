@@ -1,4 +1,4 @@
-# ZenML - GitHub Action Workflow
+# ZenML - Building an End-to-End Production MLOps Pipeline 
 
 <div align="center">
   <a href="https://zenml.io">
