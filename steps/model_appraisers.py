@@ -75,8 +75,9 @@ def model_analysis(
     model_evaluation_html: str,
     train_test_model_evaluation_report: Profile,
     train_test_model_evaluation_html: str,
-    reference_train_accuracy: Optional[float] = None,
     reference_test_accuracy: Optional[float] = None,
+    train_serve_model_comparison_report: Optional[Profile] = None,
+    train_serve_model_comparison_html: Optional[Profile] = None,
 ) -> Tuple[bool, str]:
     """Analyze the model training and evaluation results, generate a report and
     make a decision about serving the model.
@@ -106,10 +107,12 @@ def model_analysis(
             report.
         train_test_model_evaluation_html: The train-test model evaluation
             html report.
-        reference_train_accuracy: Accuracy of the reference model measured on
-            the training data (omitted if there is no reference model).
         reference_test_accuracy: Accuracy of the reference model measured on
             the test data (omitted if there is no reference model).
+        train_serve_model_comparison_report: The train-serve model comparison
+            report (omitted if there is no reference model).
+        train_serve_model_comparison_html: The train-serve model comparison
+            html report (omitted if there is no reference model).
 
     Returns:
         A tuple of the appraisal decision and a report message.
@@ -141,11 +144,21 @@ def model_analysis(
             "train_test_model_evaluation_report",
             params.ignore_model_evaluation_failures,
         ),
+        (
+            train_serve_model_comparison_report,
+            train_serve_model_comparison_html,
+            "train_serve_model_comparison_report",
+            params.ignore_reference_model,
+        ),
     ]:
         # Log Evidently suite results to the experiment tracker.
 
         # save the HTML report as an HTML file in the experiment
         # tracker
+        if report is None:
+            results.append(True)
+            continue
+
         log_text(html_report, f"{name}.html")
         check_passed = True
         if name == "train_test_data_drift_report":
@@ -221,35 +234,14 @@ test dataset and the evaluation dataset.
 Result: {'**PASSED**' if results[3] else '**FAILED**'}
 """
 
-    if (
-        reference_train_accuracy is not None
-        and reference_test_accuracy is not None
-    ):
+    if reference_test_accuracy is not None:
         if not params.ignore_reference_model:
-            if (
-                reference_train_accuracy - train_accuracy
-            ) > params.max_train_accuracy_diff:
-                passed = False
-
             if (
                 reference_test_accuracy - test_accuracy
             ) > params.max_test_accuracy_diff:
                 passed = False
 
         report += f"""
-### Model comparison with reference model on training dataset {'(ignored)' if params.ignore_reference_model else ''}
-
-Description: Compares the performance of the trained model on the training
-dataset against a reference model that is already deployed in production.
-The difference in accuracy on the training dataset should not exceed
-{params.max_train_accuracy_diff}.
-
-Result: {'**PASSED**' if train_accuracy >= params.train_accuracy_threshold else '**FAILED**'}
-
-- trained model accuracy: {train_accuracy}
-- reference model accuracy: {reference_train_accuracy}
-- (absolute) difference in accuracy: {abs(reference_train_accuracy - train_accuracy)}
-
 ### Model comparison with reference model on evaluation dataset {'(ignored)' if params.ignore_reference_model else ''}
 
 Description: Compares the performance of the trained model on the evaluation
@@ -262,6 +254,14 @@ Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '*
 - trained model accuracy: {test_accuracy}
 - reference model accuracy: {reference_test_accuracy}
 - (absolute) difference in accuracy: {abs(reference_test_accuracy - test_accuracy)}
+
+### Train-serve model comparison checks {'(ignored)' if params.ignore_reference_model else ''}
+
+Description: Runs a set of checks to compare the performance of the trained
+and the model currently deployed in production against the evaluation dataset.
+
+Result: {'**PASSED**' if results[4] else '**FAILED**'}
+
 """
     experiment_tracker_run_url = get_current_tracker_run_url()
 
@@ -271,6 +271,8 @@ Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '*
 {'- [experiment tracker run](' + experiment_tracker_run_url + ')' if experiment_tracker_run_url else ''}
 
 """
+    log_text(report, f"model_report.md")
+
     return passed, report
 
 
@@ -330,8 +332,6 @@ def model_train_appraiser(
         model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
         train_test_model_evaluation_html=train_test_model_evaluation_html,
-        reference_train_accuracy=None,
-        reference_test_accuracy=None,
     )
 
 
@@ -342,7 +342,6 @@ def model_train_reference_appraiser(
     params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
-    reference_train_accuracy: float,
     reference_test_accuracy: float,
     data_quality_report: Profile,
     data_quality_html: str,
@@ -352,6 +351,8 @@ def model_train_reference_appraiser(
     model_evaluation_html: str,
     train_test_model_evaluation_report: Profile,
     train_test_model_evaluation_html: str,
+    train_serve_model_comparison_report: Profile,
+    train_serve_model_comparison_html: str,
 ) -> Output(result=bool, report=str):
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -369,8 +370,6 @@ def model_train_reference_appraiser(
             silenced checks, etc.).
         train_accuracy: Accuracy of the trained model on the training dataset.
         test_accuracy: Accuracy of the trained model on the evaluation dataset.
-        reference_train_accuracy: Accuracy of the reference model on the
-            training dataset.
         reference_test_accuracy: Accuracy of the reference model on the
             evaluation dataset.
         data_quality_report: The data quality report.
@@ -382,6 +381,10 @@ def model_train_reference_appraiser(
         train_test_model_evaluation_report: The train-test model evaluation
             report.
         train_test_model_evaluation_html: The train-test model evaluation
+            html report.
+        train_serve_model_comparison_report: The train-serve model comparison
+            report.
+        train_serve_model_comparison_html: The train-serve model comparison
             html report.
 
     Returns:
@@ -400,10 +403,13 @@ def model_train_reference_appraiser(
         model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
         train_test_model_evaluation_html=train_test_model_evaluation_html,
-        reference_train_accuracy=reference_train_accuracy
-        if reference_train_accuracy
-        else None,
         reference_test_accuracy=reference_test_accuracy
+        if reference_test_accuracy
+        else None,
+        train_serve_model_comparison_report=train_serve_model_comparison_report
+        if reference_test_accuracy
+        else None,
+        train_serve_model_comparison_html=train_serve_model_comparison_html
         if reference_test_accuracy
         else None,
     )

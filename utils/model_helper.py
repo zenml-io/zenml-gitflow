@@ -55,7 +55,14 @@ def load_deployed_model(
     # of the pipeline step name. This is a bug in the model deployer.
     # step_name = models[0].config.pipeline_step_name
 
-    pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_run_id)
+    try:
+        pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_run_id)
+    except KeyError:
+        print(
+            f"Could not find the pipeline run {pipeline_run_id} that was used to "
+            f"deploy the model {model_name}."
+        )
+        return None, None
     steps_page = Client().list_run_steps(pipeline_run_id=pipeline_run.id)
     step = next((step for step in steps_page.items if step.name == step_name), None)
     if step is None:

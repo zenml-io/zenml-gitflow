@@ -130,7 +130,7 @@ def decision_tree_trainer(
     X = train_dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME])
     y = train_dataset[DATASET_TARGET_COLUMN_NAME]
     model = DecisionTreeClassifier(
-        max_depth=5,
+        max_depth=params.max_depth,
         random_state=params.random_state,
         **params.extra_hyperparams,
     )

@@ -129,6 +129,8 @@ def optional_model_scorer(
         column are returned instead.
     """
     if not len(model):
+        # Add fake prediction column to the dataset
+        dataset[DATASET_PREDICTION_COLUMN_NAME] = 0
         return dataset, 0.0
     predictions, acc = score_model(dataset, model[0])
     log_metric(params.accuracy_metric_name, acc)
@@ -139,6 +141,22 @@ def optional_model_scorer(
 # Evidently train-test model evaluation step.
 train_test_model_evaluator = evidently_profile_step(
     step_name="train_test_model_evaluator",
+    params=EvidentlyProfileParameters(
+        column_mapping=EvidentlyColumnMapping(
+            target=DATASET_TARGET_COLUMN_NAME,
+            prediction=DATASET_PREDICTION_COLUMN_NAME,
+        ),
+        profile_sections=[
+            "classificationmodelperformance",
+        ],
+        verbose_level=1,
+    ),
+)
+
+
+# Evidently train-serve model comparison step.
+train_serve_model_comparison = evidently_profile_step(
+    step_name="train_serve_model_comparison",
     params=EvidentlyProfileParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,

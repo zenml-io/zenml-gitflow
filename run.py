@@ -61,6 +61,7 @@ from steps.model_evaluators import (
     model_scorer,
     model_evaluator,
     optional_model_scorer,
+    train_serve_model_comparison,
     train_test_model_evaluator,
 )
 from zenml.enums import ExecutionStatus
@@ -122,12 +123,26 @@ def main(
     )
     settings["docker"] = docker_settings
 
-    model_trainer = decision_tree_trainer(
-        params=DecisionTreeTrainerParams(
+    model_trainer = svc_trainer(
+        params=SVCTrainerParams(
             random_state=RANDOM_STATE,
-            max_depth=5,
+            C=1.320498,
+            kernel="rbf",
+            degree=3,
+            coef0=0.0,
+            shrinking=True,
+            probability=False,
         )
     )
+
+    # Uncomment the following lines to use the decision tree model trainer instead.
+    # model_trainer = decision_tree_trainer(
+    #     params=DecisionTreeTrainerParams(
+    #         random_state=RANDOM_STATE,
+    #         max_depth=3,
+    #     )
+    # )
+
 
     client = Client()
     if pipeline_name == Pipeline.END_TO_END:
@@ -213,13 +228,13 @@ def main(
                 name="train_model_scorer",
                 params=ModelScorerStepParams(
                     accuracy_metric_name="train_accuracy",
-                )
+                ),
             ),
             test_model_scorer=model_scorer(
                 name="test_model_scorer",
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
-                )
+                ),
             ),
             model_evaluator=model_evaluator,
             train_test_model_evaluator=train_test_model_evaluator,
@@ -251,10 +266,17 @@ def main(
             data_quality_profiler=data_quality_profiler,
             train_test_data_drift_detector=data_drift_detector,
             model_trainer=model_trainer,
-            model_scorer=model_scorer(
+            train_model_scorer=model_scorer(
+                name="train_model_scorer",
+                params=ModelScorerStepParams(
+                    accuracy_metric_name="train_accuracy",
+                ),
+            ),
+            test_model_scorer=model_scorer(
+                name="test_model_scorer",
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
-                )
+                ),
             ),
             model_evaluator=model_evaluator,
             train_test_model_evaluator=train_test_model_evaluator,
@@ -264,18 +286,13 @@ def main(
                     step_name="model_deployer",
                 )
             ),
-            served_model_train_scorer=optional_model_scorer(
-                name="served_model_train_scorer",
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="reference_train_accuracy",
-                ),
-            ),
             served_model_test_scorer=optional_model_scorer(
                 name="served_model_test_scorer",
                 params=ModelScorerStepParams(
                     accuracy_metric_name="reference_test_accuracy",
                 ),
             ),
+            train_serve_model_comparison=train_serve_model_comparison,
             model_appraiser=model_train_reference_appraiser(
                 params=ModelAppraisalStepParams(
                     train_accuracy_threshold=MIN_TRAIN_ACCURACY,
@@ -319,6 +336,10 @@ def main(
     train_test_model_evaluator_step = pipeline_run.get_step(
         step="train_test_model_evaluator"
     )
+    if pipeline_name == Pipeline.END_TO_END:
+        train_serve_model_comparison_step = pipeline_run.get_step(
+            step="train_serve_model_comparison"
+        )
     model_appraiser_step = pipeline_run.get_step(step="model_appraiser")
     report, result = get_result_and_write_report(
         model_appraiser_step, "model_train_results.md"
@@ -338,13 +359,17 @@ def main(
         EvidentlyVisualizer().visualize(data_drift_step)
         EvidentlyVisualizer().visualize(model_evaluator_step)
         EvidentlyVisualizer().visualize(train_test_model_evaluator_step)
+        if pipeline_name == Pipeline.END_TO_END:
+            EvidentlyVisualizer().visualize(train_serve_model_comparison_step)
 
         # To generate the Evidently reports as PDF files, uncomment the following lines:
         #
         # NOTE: you also need to install `wkhtmltopdf` on your machine for this
         # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`).
         #
-        data_validation_report_to_pdf(data_quality_step, "data_integrity_report.pdf")
+        data_validation_report_to_pdf(
+            data_quality_step, "data_integrity_report.pdf"
+        )
         data_validation_report_to_pdf(data_drift_step, "data_drift_report.pdf")
         data_validation_report_to_pdf(
             model_evaluator_step, "model_evaluator_report.pdf"
@@ -353,6 +378,11 @@ def main(
             train_test_model_evaluator_step,
             "train_test_model_evaluator_report.pdf",
         )
+        if pipeline_name == Pipeline.END_TO_END:
+            data_validation_report_to_pdf(
+                train_serve_model_comparison_step,
+                "train_serve_model_comparison_report.pdf",
+            )
 
 
 if __name__ == "__main__":

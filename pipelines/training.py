@@ -34,12 +34,14 @@ def devweek_training_pipeline(
         dataset=data,
     )
     train_dataset, test_dataset = data_splitter(data)
+
     (
         train_test_data_drift_report,
         train_test_data_drift_html,
     ) = train_test_data_drift_detector(
         reference_dataset=train_dataset, comparison_dataset=test_dataset
     )
+
     model = model_trainer(train_dataset=train_dataset)
     train_dataset_with_predictions, train_accuracy = train_model_scorer(
         dataset=train_dataset, model=model
@@ -47,6 +49,7 @@ def devweek_training_pipeline(
     test_dataset_with_predictions, test_accuracy = test_model_scorer(
         dataset=test_dataset, model=model
     )
+
     (
         train_test_model_evaluation_report,
         train_test_model_evaluation_html,
@@ -54,6 +57,7 @@ def devweek_training_pipeline(
         reference_dataset=train_dataset_with_predictions,
         comparison_dataset=test_dataset_with_predictions,
     )
+
     model_evaluation_report, model_evaluation_html = model_evaluator(
         dataset=test_dataset_with_predictions,
     )

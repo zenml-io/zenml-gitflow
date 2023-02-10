@@ -19,15 +19,16 @@ from zenml.pipelines import pipeline
 def devweek_end_to_end_pipeline(
     importer,
     data_splitter,
-    data_integrity_checker,
+    data_quality_profiler,
     train_test_data_drift_detector,
     model_trainer,
-    model_scorer,
+    train_model_scorer,
+    test_model_scorer,
     model_evaluator,
     train_test_model_evaluator,
     served_model_loader,
-    served_model_train_scorer,
     served_model_test_scorer,
+    train_serve_model_comparison,
     model_appraiser,
     model_deployer,
 ):
@@ -35,36 +36,64 @@ def devweek_end_to_end_pipeline(
     currently served."""
     data = importer()
     served_model = served_model_loader()
-    data_integrity_report = data_integrity_checker(dataset=data)
+    data_quality_report, data_quality_html = data_quality_profiler(
+        dataset=data,
+    )
     train_dataset, test_dataset = data_splitter(data)
-    train_test_data_drift_report = train_test_data_drift_detector(
-        reference_dataset=train_dataset, target_dataset=test_dataset
+
+    (
+        train_test_data_drift_report,
+        train_test_data_drift_html,
+    ) = train_test_data_drift_detector(
+        reference_dataset=train_dataset, comparison_dataset=test_dataset
     )
-    model, train_accuracy = model_trainer(train_dataset=train_dataset)
-    test_accuracy = model_scorer(dataset=test_dataset, model=model)
-    served_train_accuracy = served_model_train_scorer(
-        dataset=train_dataset, model=served_model
+
+    model = model_trainer(train_dataset=train_dataset)
+    train_dataset_with_predictions, train_accuracy = train_model_scorer(
+        dataset=train_dataset, model=model
     )
-    served_test_accuracy = served_model_test_scorer(
-        dataset=test_dataset, model=served_model
+    test_dataset_with_predictions, test_accuracy = test_model_scorer(
+        dataset=test_dataset, model=model
     )
-    train_test_model_evaluation_report = train_test_model_evaluator(
-        model=model,
-        reference_dataset=train_dataset,
-        target_dataset=test_dataset,
+
+    (
+        train_test_model_evaluation_report,
+        train_test_model_evaluation_html,
+    ) = train_test_model_evaluator(
+        reference_dataset=train_dataset_with_predictions,
+        comparison_dataset=test_dataset_with_predictions,
     )
-    model_evaluation_report = model_evaluator(
-        model=model,
-        dataset=test_dataset,
+
+    model_evaluation_report, model_evaluation_html = model_evaluator(
+        dataset=test_dataset_with_predictions,
     )
+
+    (
+        served_test_dataset_with_predictions,
+        served_test_accuracy,
+    ) = served_model_test_scorer(dataset=test_dataset, model=served_model)
+
+    (
+        train_serve_model_comparison_report,
+        train_serve_model_comparison_html,
+    ) = train_serve_model_comparison(
+        reference_dataset=served_test_dataset_with_predictions,
+        comparison_dataset=test_dataset_with_predictions,
+    )
+
     deploy_decision, report = model_appraiser(
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        reference_train_accuracy=served_train_accuracy,
-        reference_test_accuracy=served_test_accuracy,
-        data_integrity_report=data_integrity_report,
+        data_quality_report=data_quality_report,
+        data_quality_html=data_quality_html,
         train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_html=train_test_data_drift_html,
         model_evaluation_report=model_evaluation_report,
+        model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_html=train_test_model_evaluation_html,
+        reference_test_accuracy=served_test_accuracy,
+        train_serve_model_comparison_report=train_serve_model_comparison_report,
+        train_serve_model_comparison_html=train_serve_model_comparison_html,
     )
     model_deployer(deploy_decision=deploy_decision, model=model)
