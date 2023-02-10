@@ -25,7 +25,7 @@ from utils.tracker_helper import (
     log_text,
 )
 
-from deepchecks import SuiteResult
+from evidently.model_profile import Profile  # type: ignore[import]
 
 
 class ModelAppraisalStepParams(BaseParameters):
@@ -36,14 +36,14 @@ class ModelAppraisalStepParams(BaseParameters):
             training data.
         test_accuracy_threshold: The minimum accuracy of the model on the test
             data.
-        warnings_as_errors: Whether to treat Deepchecks warnings as errors.
+        warnings_as_errors: Whether to treat Evidently warnings as errors.
         ignore_data_integrity_failures: Whether to ignore data integrity
-            failures reported by Deepchecks on the input data.
+            failures reported by Evidently on the input data.
         ignore_train_test_data_drift_failures: Whether to ignore train-test data
-            drift check failures reported by Deepchecks on the train/test
+            drift check failures reported by Evidently on the train/test
             datasets.
         ignore_model_evaluation_failures: Whether to ignore model evaluation
-            failures reported by Deepchecks on the model.
+            failures reported by Evidently on the model.
         ignore_reference_model: Whether to ignore the reference model in the
             model appraisal.
         max_train_accuracy_diff: The maximum difference between the accuracy of
@@ -67,10 +67,14 @@ def model_analysis(
     params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
-    data_integrity_report: SuiteResult,
-    train_test_data_drift_report: SuiteResult,
-    model_evaluation_report: SuiteResult,
-    train_test_model_evaluation_report: SuiteResult,
+    data_quality_report: Profile,
+    data_quality_html: str,
+    train_test_data_drift_report: Profile,
+    train_test_data_drift_html: str,
+    model_evaluation_report: Profile,
+    model_evaluation_html: str,
+    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_html: str,
     reference_train_accuracy: Optional[float] = None,
     reference_test_accuracy: Optional[float] = None,
 ) -> Tuple[bool, str]:
@@ -79,7 +83,7 @@ def model_analysis(
 
     The gathered results are analyzed and a decision is made about whether the
     model should be served or not. The decision is based on the accuracy of the
-    model on the training and test data, the data integrity report, the train-test
+    model on the training and test data, the data quality report, the train-test
     data drift report, the model evaluation report, and the train-test model
     evaluation report. If accuracy values are provided for a reference model,
     the performance difference between the reference model and the trained model
@@ -92,11 +96,16 @@ def model_analysis(
         params: Training appraisal configuration parameters.
         train_accuracy: The accuracy of the trained model on the training data.
         test_accuracy: The accuracy of the trained model on the test data.
-        data_integrity_report: The data integrity report.
+        data_quality_report: The data quality report.
+        data_quality_html: The data quality html report.
         train_test_data_drift_report: The train-test data drift report.
+        train_test_data_drift_html: The train-test data drift html report.
         model_evaluation_report: The model evaluation report.
+        model_evaluation_html: The model evaluation html report.
         train_test_model_evaluation_report: The train-test model evaluation
             report.
+        train_test_model_evaluation_html: The train-test model evaluation
+            html report.
         reference_train_accuracy: Accuracy of the reference model measured on
             the training data (omitted if there is no reference model).
         reference_test_accuracy: Accuracy of the reference model measured on
@@ -105,65 +114,45 @@ def model_analysis(
     Returns:
         A tuple of the appraisal decision and a report message.
     """
-    results: List[Tuple[bool, int, int, int, int, List[str], List[str]]] = []
+    results: List[bool] = []
     passed = True
-    for suite_result, name, ignored in [
+    for report, html_report, name, ignored in [
         (
-            data_integrity_report,
-            "data_integrity_report",
+            data_quality_report,
+            data_quality_html,
+            "data_quality_report",
             params.ignore_data_integrity_failures,
         ),
         (
             train_test_data_drift_report,
+            train_test_data_drift_html,
             "train_test_data_drift_report",
             params.ignore_train_test_data_drift_failures,
         ),
         (
             model_evaluation_report,
+            model_evaluation_html,
             "model_evaluation_report",
             params.ignore_model_evaluation_failures,
         ),
         (
             train_test_model_evaluation_report,
+            train_test_model_evaluation_html,
             "train_test_model_evaluation_report",
             params.ignore_model_evaluation_failures,
         ),
     ]:
-        # Log Deepchecks suite results to the experiment tracker.
+        # Log Evidently suite results to the experiment tracker.
 
-        # serialize and save the suite result as an HTML file in the experiment
+        # save the HTML report as an HTML file in the experiment
         # tracker
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=True, suffix=".html", encoding="utf-8"
-        ) as f:
-            suite_result.save_as_html(f)
-            with open(f.name, "r") as f:
-                suite_html = f.read()
-        log_text(suite_html, f"{name}.html")
-        passed_checks = suite_result.get_passed_checks()
-        failed_checks = suite_result.get_not_passed_checks(
-            fail_if_warning=False
-        )
-        warning_checks = [
-            check
-            for check in suite_result.get_not_passed_checks(
-                fail_if_warning=True
-            )
-            if check not in failed_checks
-        ]
-        skipped_checks = suite_result.get_not_ran_checks()
-        check_passed = suite_result.passed(fail_if_warning=params.warnings_as_errors)
-        results.append(
-            (
-                check_passed,
-                len(passed_checks),
-                len(failed_checks),
-                len(warning_checks),
-                len(skipped_checks),
-                [check_result.check.name() for check_result in failed_checks],
-                [check_result.check.name() for check_result in warning_checks],
-            )
-        )
+        log_text(html_report, f"{name}.html")
+        check_passed = True
+        if name == "train_test_data_drift_report":
+            result = report.object()["data_drift"]["data"]["metrics"][
+                "dataset_drift"
+            ]
+        results.append(check_passed)
         if not check_passed and not ignored:
             passed = False
 
@@ -200,19 +189,14 @@ Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '*
 - min. accuracy: {params.test_accuracy_threshold}
 - actual accuracy: {test_accuracy}
 
-### Data integrity checks {'(ignored)' if params.ignore_data_integrity_failures else ''}
+### Data quality checks {'(ignored)' if params.ignore_data_integrity_failures else ''}
 
 Description: A set of data quality checks that verify whether the input data is
 valid and can be used for training (no duplicate samples, no missing values or
 problems with string or categorical features, no significant outliers, no
 inconsistent labels, etc.).
 
-Results: {'**PASSED**' if results[0][0] else '**FAILED**'}
-
-- passed checks: {results[0][1]}
-- failed checks: {results[0][2]}  [{', '.join(results[0][5])}]
-- checks with warnings: {results[0][3]}  [{', '.join(results[0][6])}]
-- skipped checks: {results[0][4]}
+Result: {'**PASSED**' if results[0] else '**FAILED**'}
 
 ### Train-test data drift checks {'(ignored)' if params.ignore_train_test_data_drift_failures else ''}
 
@@ -220,43 +204,27 @@ Description: Compares the training and evaluation datasets to verify that their
 distributions are similar and there is no potential data leakage that may
 contaminate your model or perceived results.
 
-Results: {'**PASSED**' if results[1][0] else '**FAILED**'}
-
-- passed checks: {results[1][1]}
-- failed checks: {results[1][2]}  [{', '.join(results[1][5])}]
-- checks with warnings: {results[1][3]}  [{', '.join(results[1][6])}]
-- skipped checks: {results[1][4]}
+Result: {'**PASSED**' if results[1] else '**FAILED**'}
 
 ### Model evaluation checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
 
 Description: Runs a set of checks to evaluate the model performance, detect
 overfitting, and verify that the model is not biased.
 
-Results: {'**PASSED**' if results[2][0] else '**FAILED**'}
-
-- passed checks: {results[2][1]}
-- failed checks: {results[2][2]}  [{', '.join(results[2][5])}]
-- checks with warnings: {results[2][3]}  [{', '.join(results[2][6])}]
-- skipped checks: {results[2][4]}
+Result: {'**PASSED**' if results[2] else '**FAILED**'}
 
 ### Train-test model comparison checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
 
 Description: Runs a set of checks to compare the model performance between the
 test dataset and the evaluation dataset.
 
-Results: {'**PASSED**' if results[3][0] else '**FAILED**'}
-
-- passed checks: {results[3][1]}
-- failed checks: {results[3][2]}  [{', '.join(results[3][5])}]
-- checks with warnings: {results[3][3]}  [{', '.join(results[3][6])}]
-- skipped checks: {results[3][4]}
+Result: {'**PASSED**' if results[3] else '**FAILED**'}
 """
 
     if (
         reference_train_accuracy is not None
         and reference_test_accuracy is not None
     ):
-
         if not params.ignore_reference_model:
             if (
                 reference_train_accuracy - train_accuracy
@@ -313,17 +281,21 @@ def model_train_appraiser(
     params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
-    data_integrity_report: SuiteResult,
-    train_test_data_drift_report: SuiteResult,
-    model_evaluation_report: SuiteResult,
-    train_test_model_evaluation_report: SuiteResult,
+    data_quality_report: Profile,
+    data_quality_html: str,
+    train_test_data_drift_report: Profile,
+    train_test_data_drift_html: str,
+    model_evaluation_report: Profile,
+    model_evaluation_html: str,
+    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_html: str,
 ) -> Output(result=bool, report=str):
     """Analyze the training results, generate a report and make a decision about
     serving the model.
 
     This step is the last step in the model training pipeline. It analyzes the
     results collected from various steps in the pipeline (e.g model and data
-    Deepchecks reports, model scoring accuracy values) and makes a decision
+    Evdently reports, model scoring accuracy values) and makes a decision
     regarding the model quality and whether it should be served or not.
     It also generates a report that summarizes the results of the analysis.
 
@@ -332,15 +304,16 @@ def model_train_appraiser(
             silenced checks, etc.).
         train_accuracy: Accuracy of the trained model on the training dataset.
         test_accuracy: Accuracy of the trained model on the evaluation dataset.
-        data_integrity_report: Data integrity report computed by Deepchecks on
-            the input data.
-        train_test_data_drift_report: Train-test data drift report computed by
-            Deepchecks on the train/test datasets.
-        model_evaluation_report: Model evaluation report computed by Deepchecks
-            on the input model.
-        train_test_model_evaluation_report: Train-test model evaluation report
-            computed by Deepchecks on the input model and the train/test
-            datasets.
+        data_quality_report: The data quality report.
+        data_quality_html: The data quality html report.
+        train_test_data_drift_report: The train-test data drift report.
+        train_test_data_drift_html: The train-test data drift html report.
+        model_evaluation_report: The model evaluation report.
+        model_evaluation_html: The model evaluation html report.
+        train_test_model_evaluation_report: The train-test model evaluation
+            report.
+        train_test_model_evaluation_html: The train-test model evaluation
+            html report.
 
     Returns:
         A tuple of the model appraisal result and the model appraisal report.
@@ -349,10 +322,14 @@ def model_train_appraiser(
         params=params,
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        data_integrity_report=data_integrity_report,
+        data_quality_report=data_quality_report,
+        data_quality_html=data_quality_html,
         train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_html=train_test_data_drift_html,
         model_evaluation_report=model_evaluation_report,
+        model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_html=train_test_model_evaluation_html,
         reference_train_accuracy=None,
         reference_test_accuracy=None,
     )
@@ -367,10 +344,14 @@ def model_train_reference_appraiser(
     test_accuracy: float,
     reference_train_accuracy: float,
     reference_test_accuracy: float,
-    data_integrity_report: SuiteResult,
-    train_test_data_drift_report: SuiteResult,
-    model_evaluation_report: SuiteResult,
-    train_test_model_evaluation_report: SuiteResult,
+    data_quality_report: Profile,
+    data_quality_html: str,
+    train_test_data_drift_report: Profile,
+    train_test_data_drift_html: str,
+    model_evaluation_report: Profile,
+    model_evaluation_html: str,
+    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_html: str,
 ) -> Output(result=bool, report=str):
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -379,7 +360,7 @@ def model_train_reference_appraiser(
     trained model against a reference model (e.g. that is already deployed in
     production). It analyzes the
     results collected from various steps in the pipeline (e.g model and data
-    Deepchecks reports, model scoring accuracy values) and makes a decision
+    Evidently reports, model scoring accuracy values) and makes a decision
     regarding the model quality and whether it should be served or not.
     It also generates a report that summarizes the results of the analysis.
 
@@ -392,15 +373,16 @@ def model_train_reference_appraiser(
             training dataset.
         reference_test_accuracy: Accuracy of the reference model on the
             evaluation dataset.
-        data_integrity_report: Data integrity report computed by Deepchecks on
-            the input data.
-        train_test_data_drift_report: Train-test data drift report computed by
-            Deepchecks on the train/test datasets.
-        model_evaluation_report: Model evaluation report computed by Deepchecks
-            on the input model.
-        train_test_model_evaluation_report: Train-test model evaluation report
-            computed by Deepchecks on the input model and the train/test
-            datasets.
+        data_quality_report: The data quality report.
+        data_quality_html: The data quality html report.
+        train_test_data_drift_report: The train-test data drift report.
+        train_test_data_drift_html: The train-test data drift html report.
+        model_evaluation_report: The model evaluation report.
+        model_evaluation_html: The model evaluation html report.
+        train_test_model_evaluation_report: The train-test model evaluation
+            report.
+        train_test_model_evaluation_html: The train-test model evaluation
+            html report.
 
     Returns:
         A tuple of the model appraisal result and the model appraisal report.
@@ -410,10 +392,14 @@ def model_train_reference_appraiser(
         params=params,
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        data_integrity_report=data_integrity_report,
+        data_quality_report=data_quality_report,
+        data_quality_html=data_quality_html,
         train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_html=train_test_data_drift_html,
         model_evaluation_report=model_evaluation_report,
+        model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_html=train_test_model_evaluation_html,
         reference_train_accuracy=reference_train_accuracy
         if reference_train_accuracy
         else None,

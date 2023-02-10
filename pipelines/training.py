@@ -16,40 +16,56 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def gitflow_training_pipeline(
+def devweek_training_pipeline(
     importer,
     data_splitter,
-    data_integrity_checker,
+    data_quality_profiler,
     train_test_data_drift_detector,
     model_trainer,
-    model_scorer,
+    train_model_scorer,
+    test_model_scorer,
     model_evaluator,
     train_test_model_evaluator,
     model_appraiser,
 ):
     """Pipeline that trains and evaluates a new model."""
     data = importer()
-    data_integrity_report = data_integrity_checker(dataset=data)
+    data_quality_report, data_quality_html = data_quality_profiler(
+        dataset=data,
+    )
     train_dataset, test_dataset = data_splitter(data)
-    train_test_data_drift_report = train_test_data_drift_detector(
-        reference_dataset=train_dataset, target_dataset=test_dataset
+    (
+        train_test_data_drift_report,
+        train_test_data_drift_html,
+    ) = train_test_data_drift_detector(
+        reference_dataset=train_dataset, comparison_dataset=test_dataset
     )
-    model, train_accuracy = model_trainer(train_dataset=train_dataset)
-    test_accuracy = model_scorer(dataset=test_dataset, model=model)
-    train_test_model_evaluation_report = train_test_model_evaluator(
-        model=model,
-        reference_dataset=train_dataset,
-        target_dataset=test_dataset,
+    model = model_trainer(train_dataset=train_dataset)
+    train_dataset_with_predictions, train_accuracy = train_model_scorer(
+        dataset=train_dataset, model=model
     )
-    model_evaluation_report = model_evaluator(
-        model=model,
-        dataset=test_dataset,
+    test_dataset_with_predictions, test_accuracy = test_model_scorer(
+        dataset=test_dataset, model=model
+    )
+    (
+        train_test_model_evaluation_report,
+        train_test_model_evaluation_html,
+    ) = train_test_model_evaluator(
+        reference_dataset=train_dataset_with_predictions,
+        comparison_dataset=test_dataset_with_predictions,
+    )
+    model_evaluation_report, model_evaluation_html = model_evaluator(
+        dataset=test_dataset_with_predictions,
     )
     model_appraiser(
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        data_integrity_report=data_integrity_report,
+        data_quality_report=data_quality_report,
+        data_quality_html=data_quality_html,
         train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_html=train_test_data_drift_html,
         model_evaluation_report=model_evaluation_report,
+        model_evaluation_html=model_evaluation_html,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_html=train_test_model_evaluation_html,
     )

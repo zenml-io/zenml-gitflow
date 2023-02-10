@@ -16,7 +16,7 @@ from zenml.pipelines import pipeline
 
 
 @pipeline
-def gitflow_end_to_end_pipeline(
+def devweek_end_to_end_pipeline(
     importer,
     data_splitter,
     data_integrity_checker,

@@ -14,40 +14,42 @@
 """Data validation steps used to check the input data quality and to ensure that
 the training and validation data have the same distribution."""
 
-from zenml.integrations.deepchecks.steps import (
-    DeepchecksDataDriftCheckStepParameters,
-    deepchecks_data_drift_check_step,
-    DeepchecksDataIntegrityCheckStepParameters,
-    deepchecks_data_integrity_check_step,
+from zenml.integrations.evidently.steps import (
+    EvidentlyColumnMapping,
+    EvidentlyProfileParameters,
+    evidently_profile_step,
 )
-from zenml.integrations.deepchecks.validation_checks import (
-    DeepchecksDataDriftCheck,
-)
+from steps.evidently import CustomEvidentlyProfileStep
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 
-# Deepchecks data integrity check step
-data_integrity_checker = deepchecks_data_integrity_check_step(
-    step_name="data_integrity_checker",
-    params=DeepchecksDataIntegrityCheckStepParameters(
-        dataset_kwargs=dict(
-            label=DATASET_TARGET_COLUMN_NAME,
-            cat_features=[],
+# Evidently data quality profiler step
+data_quality_profiler = CustomEvidentlyProfileStep(
+    name="data_quality_profiler",
+    params=EvidentlyProfileParameters(
+        column_mapping=EvidentlyColumnMapping(
+            target=DATASET_TARGET_COLUMN_NAME,
+            prediction=DATASET_TARGET_COLUMN_NAME,
         ),
+        profile_sections=[
+            "dataquality",
+        ],
+        verbose_level=1,
     ),
 )
 
-# Deepchecks train-test data similarity check step
-data_drift_detector = deepchecks_data_drift_check_step(
+# Evidently train-test data similarity check step
+data_drift_detector = evidently_profile_step(
     step_name="data_drift_detector",
-    params=DeepchecksDataDriftCheckStepParameters(
-        dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
-        check_kwargs={
-            DeepchecksDataDriftCheck.TABULAR_FEATURE_LABEL_CORRELATION_CHANGE: dict(
-                condition_feature_pps_in_train_less_than=dict(
-                    threshold=1., # essentially turns off the label correlation check
-                ),
-            )
-        },
+    params=EvidentlyProfileParameters(
+        column_mapping=EvidentlyColumnMapping(
+            target=DATASET_TARGET_COLUMN_NAME,
+            prediction=DATASET_TARGET_COLUMN_NAME,
+        ),
+        profile_sections=[
+            "categoricaltargetdrift",
+            "datadrift",
+        ],
+        verbose_level=1,
     ),
 )

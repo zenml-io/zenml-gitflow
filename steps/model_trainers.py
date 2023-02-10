@@ -57,18 +57,18 @@ class SVCTrainerParams(BaseParameters):
 def svc_trainer(
     params: SVCTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+) -> ClassifierMixin:
     """Train and logs a sklearn C-support vector classification model.
     
-    If the experiment tracker is enabled, the model and the training accuracy
-    will be logged to the experiment tracker.
+    If the experiment tracker is enabled, the model will be logged to the
+    experiment tracker.
 
     Args:
         params: The hyperparameters for the model.
         train_dataset: The training dataset to train the model on.
 
     Returns:
-        The trained model and the training accuracy.
+        The trained model.
     """
     enable_autolog()
 
@@ -86,9 +86,7 @@ def svc_trainer(
     )
 
     model.fit(X, y)
-    train_acc = model.score(X, y)
-    print(f"Train accuracy: {train_acc}")
-    return model, train_acc
+    return model
 
 
 class DecisionTreeTrainerParams(BaseParameters):
@@ -114,18 +112,18 @@ class DecisionTreeTrainerParams(BaseParameters):
 def decision_tree_trainer(
     params: DecisionTreeTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+) -> ClassifierMixin:
     """Train a sklearn decision tree classifier.
 
-    If the experiment tracker is enabled, the model and the training accuracy
-    will be logged to the experiment tracker.
+    If the experiment tracker is enabled, the model will be logged to the
+    experiment tracker.
 
     Args:
         params: The hyperparameters for the model.
         train_dataset: The training dataset to train the model on.
     
     Returns:
-        The trained model and the training accuracy.
+        The trained model.
     """
     enable_autolog()
 
@@ -138,6 +136,4 @@ def decision_tree_trainer(
     )
 
     model.fit(X, y)
-    train_acc = model.score(X, y)
-    print(f"Train accuracy: {train_acc}")
-    return model, train_acc
+    return model

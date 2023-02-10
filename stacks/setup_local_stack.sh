@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 
+msg() {
+  echo >&2 -e "${1-}"
+}
+
 set -Eeo pipefail
 
-zenml data-validator register deepchecks_data_validator --flavor=deepchecks
-zenml experiment-tracker register local_mlflow_tracker  --flavor=mlflow
-zenml model-deployer register local_mlflow_deployer  --flavor=mlflow
-zenml stack register local_gitflow_stack \
+zenml data-validator register evidently --flavor=evidently || \
+  msg "${WARNING}Reusing preexisting data validator ${NOFORMAT}evidently"
+zenml experiment-tracker register local_mlflow_tracker  --flavor=mlflow || \
+  msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}local_mlflow_tracker"
+zenml model-deployer register local_mlflow_deployer --flavor=mlflow || \
+  msg "${WARNING}Reusing preexisting model deployer ${NOFORMAT}local_mlflow_deployer"
+zenml stack register local_stack \
     -a default \
     -o default \
     -e local_mlflow_tracker \
     -d local_mlflow_deployer \
-    -dv deepchecks_data_validator
-zenml stack set local_gitflow_stack
+    -dv evidently || \
+  msg "${WARNING}Reusing preexisting stack ${NOFORMAT}local_stack"
+zenml stack set local_stack

@@ -13,22 +13,26 @@
 
 """Model scoring and evaluation steps used to check the model performance"""
 
-from typing import List
+from typing import List, Tuple
 import pandas as pd
 from sklearn.base import ClassifierMixin
+from sklearn.metrics import accuracy_score
 
-from zenml.integrations.deepchecks.steps import (
-    DeepchecksModelValidationCheckStepParameters,
-    deepchecks_model_validation_check_step,
-)
-from zenml.integrations.deepchecks.steps import (
-    DeepchecksModelDriftCheckStepParameters,
-    deepchecks_model_drift_check_step,
-)
-from zenml.steps import BaseParameters, step
 
-from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
+from zenml.integrations.evidently.steps import (
+    EvidentlyColumnMapping,
+    EvidentlyProfileParameters,
+    evidently_profile_step,
+)
+
+from zenml.steps import BaseParameters, Output, step
+
+from steps.data_loaders import (
+    DATASET_PREDICTION_COLUMN_NAME,
+    DATASET_TARGET_COLUMN_NAME,
+)
 from utils.tracker_helper import get_tracker_name, log_metric
+from steps.evidently import CustomEvidentlyProfileStep
 
 
 class ModelScorerStepParams(BaseParameters):
@@ -45,7 +49,7 @@ class ModelScorerStepParams(BaseParameters):
 def score_model(
     dataset: pd.DataFrame,
     model: ClassifierMixin,
-) -> float:
+) -> Tuple[pd.DataFrame, float]:
     """Calculate the model accuracy on a given dataset.
 
     Args:
@@ -53,12 +57,18 @@ def score_model(
         model: The model to score.
 
     Returns:
-        The accuracy of the model on the dataset.
+        The predictions dataset and the accuracy of the model on the dataset.
     """
     X = dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME])
     y = dataset[DATASET_TARGET_COLUMN_NAME]
-    acc = model.score(X, y)
-    return acc
+
+    p = model.predict(X)
+    acc = accuracy_score(y, p)
+
+    predictions = dataset.copy()
+    predictions[DATASET_PREDICTION_COLUMN_NAME] = p
+
+    return predictions, acc
 
 
 @step(
@@ -68,7 +78,7 @@ def model_scorer(
     params: ModelScorerStepParams,
     dataset: pd.DataFrame,
     model: ClassifierMixin,
-) -> float:
+) -> Output(predictions=pd.DataFrame, accuracy=float,):
     """Calculate and log the model accuracy on a given dataset.
 
     If the experiment tracker is enabled, the scoring accuracy
@@ -80,12 +90,13 @@ def model_scorer(
         model: The model to score.
 
     Returns:
-        The accuracy of the model on the dataset.
+        The accuracy of the model on the dataset and a copy of the input
+        dataframe with the predictions added as a new column.
     """
-    acc = score_model(dataset, model)
+    predictions, acc = score_model(dataset, model)
     log_metric(params.accuracy_metric_name, acc)
     print(f"{params.accuracy_metric_name}: {acc}")
-    return acc
+    return predictions, acc
 
 
 @step(
@@ -95,7 +106,7 @@ def optional_model_scorer(
     params: ModelScorerStepParams,
     dataset: pd.DataFrame,
     model: List[ClassifierMixin],
-) -> float:
+) -> Output(predictions=pd.DataFrame, accuracy=float,):
     """Calculate and log the model accuracy on a given dataset with an optional
     model.
 
@@ -109,32 +120,48 @@ def optional_model_scorer(
     Args:
         params: The parameters for the model scorer step.
         dataset: The dataset to score the model on.
-        model: Optinoal model to score.
+        model: Optional model to score.
 
     Returns:
-        The accuracy of the model on the dataset. If no model is provided, 0.0
-        is returned instead.
+        The accuracy of the model on the dataset and a copy of the input
+        dataframe with the predictions added as a new column. If no model is
+        provided, a 0.0 accuracy and an the original dataset with no prediction
+        column are returned instead.
     """
     if not len(model):
-        return 0.0
-    acc = score_model(dataset, model[0])
+        return dataset, 0.0
+    predictions, acc = score_model(dataset, model[0])
     log_metric(params.accuracy_metric_name, acc)
     print(f"{params.accuracy_metric_name}: {acc}")
-    return acc
+    return predictions, acc
 
 
-# Deepchecks train-test model evaluation step.
-train_test_model_evaluator = deepchecks_model_drift_check_step(
+# Evidently train-test model evaluation step.
+train_test_model_evaluator = evidently_profile_step(
     step_name="train_test_model_evaluator",
-    params=DeepchecksModelDriftCheckStepParameters(
-        dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
+    params=EvidentlyProfileParameters(
+        column_mapping=EvidentlyColumnMapping(
+            target=DATASET_TARGET_COLUMN_NAME,
+            prediction=DATASET_PREDICTION_COLUMN_NAME,
+        ),
+        profile_sections=[
+            "classificationmodelperformance",
+        ],
+        verbose_level=1,
     ),
 )
 
-# Deepchecks model evaluation step.
-model_evaluator = deepchecks_model_validation_check_step(
-    step_name="model_evaluator",
-    params=DeepchecksModelValidationCheckStepParameters(
-        dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
+# Evidently single dataset model evaluation step.
+model_evaluator = CustomEvidentlyProfileStep(
+    name="model_evaluator",
+    params=EvidentlyProfileParameters(
+        column_mapping=EvidentlyColumnMapping(
+            target=DATASET_TARGET_COLUMN_NAME,
+            prediction=DATASET_PREDICTION_COLUMN_NAME,
+        ),
+        profile_sections=[
+            "classificationmodelperformance",
+        ],
+        verbose_level=1,
     ),
 )

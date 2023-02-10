@@ -1,47 +1,72 @@
 #!/usr/bin/env bash
 
+msg() {
+  echo >&2 -e "${1-}"
+}
+
 set -Eeo pipefail
 
 # These settings are hard-coded at the moment
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
 aws eks --region us-east-1 update-kubeconfig --name zenhacks-cluster --alias zenml-eks
 
-zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
-zenml experiment-tracker register aws_mlflow_tracker  --flavor=mlflow --tracking_insecure_tls=true --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" 
+zenml secrets-manager register aws_secrets_manager \
+  --flavor=aws --region_name=eu-central-1 || \
+  msg "${WARNING}Reusing preexisting secrets manager ${NOFORMAT}aws_secrets_manager"
+
+zenml experiment-tracker register aws_mlflow_tracker --flavor=mlflow \
+  --tracking_insecure_tls=true \
+  --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" \
+  --tracking_username="{{mlflow_secret.tracking_username}}" \
+  --tracking_password="{{mlflow_secret.tracking_password}}" || \
+  msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}aws_mlflow_tracker"
+
 zenml orchestrator register multi_tenant_kubeflow \
   --flavor=kubeflow \
   --kubernetes_context=kubeflowmultitenant \
-  --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline
+  --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline || \
+  msg "${WARNING}Reusing preexisting orchestrator ${NOFORMAT}multi_tenant_kubeflow"
 
-zenml artifact-store register s3_store -f s3 --path=s3://zenfiles
+zenml artifact-store register s3_store -f s3 --path=s3://zenfiles || \
+  msg "${WARNING}Reusing preexisting artifact store ${NOFORMAT}s3_store"
 
-zenml image-builder register local_image_builder -f local
-zenml container-registry register ecr_registry --flavor=aws --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com 
+zenml image-builder register local_image_builder -f local || \
+  msg "${WARNING}Reusing preexisting image builder ${NOFORMAT}local_image_builder"
+
+zenml container-registry register ecr_registry --flavor=aws \
+  --uri=715803424590.dkr.ecr.us-east-1.amazonaws.com  || \
+  msg "${WARNING}Reusing preexisting container registry ${NOFORMAT}ecr_registry"
 
 # For GKE clusters, the host is the GKE cluster IP address.
-export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 # For EKS clusters, the host is the EKS cluster IP hostname.
 export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
 export INGRESS_URL="http://${INGRESS_HOST}:${INGRESS_PORT}"
 
-zenml model-deployer register kserve_s3 --flavor=kserve --kubernetes_context=kubeflowmultitenant  --kubernetes_namespace=zenml-workloads --base_url=$INGRESS_URL --secret=kservesecret 
-zenml data-validator register deepchecks_data_validator --flavor=deepchecks
+zenml model-deployer register kserve_s3 --flavor=kserve \
+  --kubernetes_context=kubeflowmultitenant \
+  --kubernetes_namespace=zenml-workloads \
+  --base_url=$INGRESS_URL --secret=kservesecret || \
+  msg "${WARNING}Reusing preexisting model deployer ${NOFORMAT}kserve_s3"
 
-zenml stack register aws_gitflow_stack \
+zenml data-validator register evidently --flavor=evidently || \
+  msg "${WARNING}Reusing preexisting data validator ${NOFORMAT}evidently"
+
+zenml stack register aws_stack \
     -a s3_store \
     -c ecr_registry \
     -o multi_tenant_kubeflow \
     -x aws_secrets_manager \
     -d kserve_s3 \
-    -dv deepchecks_data_validator \
+    -dv evidently \
     -e aws_mlflow_tracker \
     -i local_image_builder || \
-  msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_gitflow_stack"
+  msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_stack"
 
-zenml stack set aws_gitflow_stack
-zenml stack share aws_gitflow_stack
+zenml stack set aws_stack
+zenml stack share aws_stack
 
 zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 

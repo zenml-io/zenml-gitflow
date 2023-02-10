@@ -12,5 +12,5 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 
-from pipelines.training import gitflow_training_pipeline
-from pipelines.end_to_end import gitflow_end_to_end_pipeline
+from pipelines.training import devweek_training_pipeline
+from pipelines.end_to_end import devweek_end_to_end_pipeline

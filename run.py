@@ -21,8 +21,8 @@ from zenml.config import DockerSettings
 from zenml.config.docker_settings import PythonEnvironmentExportMethod
 
 from pipelines import (
-    gitflow_training_pipeline,
-    gitflow_end_to_end_pipeline,
+    devweek_training_pipeline,
+    devweek_end_to_end_pipeline,
 )
 
 from steps.data_loaders import (
@@ -31,7 +31,8 @@ from steps.data_loaders import (
     data_loader,
     data_splitter,
 )
-from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
+from zenml.integrations.evidently.visualizers import EvidentlyVisualizer
+
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
     model_train_appraiser,
@@ -53,7 +54,7 @@ from steps.model_trainers import (
 
 from steps.data_validators import (
     data_drift_detector,
-    data_integrity_checker,
+    data_quality_profiler,
 )
 from steps.model_evaluators import (
     ModelScorerStepParams,
@@ -67,7 +68,7 @@ from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.integrations.deepchecks import DeepchecksIntegration
 from utils.kubeflow_helper import get_kubeflow_settings
 from utils.report_generators import (
-    deepcheck_suite_to_pdf,
+    data_validation_report_to_pdf,
     get_result_and_write_report,
     get_result_and_write_report,
 )
@@ -84,7 +85,6 @@ WARNINGS_AS_ERRORS = False
 
 
 class Pipeline(str, Enum):
-
     TRAIN = "train"
     END_TO_END = "end-to-end"
 
@@ -119,7 +119,6 @@ def main(
     docker_settings = DockerSettings(
         install_stack_requirements=False,
         requirements=requirements_file,
-        apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
 
@@ -139,7 +138,6 @@ def main(
                 "deployer found in stack. "
             )
         elif model_deployer.flavor == "mlflow":
-
             from zenml.integrations.mlflow.steps import (
                 MLFlowDeployerParameters,
                 mlflow_model_deployer_step,
@@ -162,7 +160,6 @@ def main(
             model_deployer_step = mlflow_model_deployer
 
         elif model_deployer.flavor == "kserve":
-
             from zenml.integrations.kserve.services import (
                 KServeDeploymentConfig,
             )
@@ -197,8 +194,7 @@ def main(
         settings["orchestrator.kubeflow"] = get_kubeflow_settings()
 
     if pipeline_name == Pipeline.TRAIN:
-
-        pipeline_instance = gitflow_training_pipeline(
+        pipeline_instance = devweek_training_pipeline(
             importer=data_loader(
                 params=DataLoaderStepParameters(
                     version=dataset_version,
@@ -210,10 +206,17 @@ def main(
                     random_state=RANDOM_STATE,
                 )
             ),
-            data_integrity_checker=data_integrity_checker,
+            data_quality_profiler=data_quality_profiler,
             train_test_data_drift_detector=data_drift_detector,
             model_trainer=model_trainer,
-            model_scorer=model_scorer(
+            train_model_scorer=model_scorer(
+                name="train_model_scorer",
+                params=ModelScorerStepParams(
+                    accuracy_metric_name="train_accuracy",
+                )
+            ),
+            test_model_scorer=model_scorer(
+                name="test_model_scorer",
                 params=ModelScorerStepParams(
                     accuracy_metric_name="test_accuracy",
                 )
@@ -233,8 +236,7 @@ def main(
         )
 
     elif pipeline_name == Pipeline.END_TO_END:
-
-        pipeline_instance = gitflow_end_to_end_pipeline(
+        pipeline_instance = devweek_end_to_end_pipeline(
             importer=data_loader(
                 params=DataLoaderStepParameters(
                     version=dataset_version,
@@ -246,7 +248,7 @@ def main(
                     random_state=RANDOM_STATE,
                 )
             ),
-            data_integrity_checker=data_integrity_checker,
+            data_quality_profiler=data_quality_profiler,
             train_test_data_drift_detector=data_drift_detector,
             model_trainer=model_trainer,
             model_scorer=model_scorer(
@@ -309,7 +311,7 @@ def main(
         )
         exit(1)
 
-    data_integrity_step = pipeline_run.get_step(step="data_integrity_checker")
+    data_quality_step = pipeline_run.get_step(step="data_quality_profiler")
     data_drift_step = pipeline_run.get_step(
         step="train_test_data_drift_detector"
     )
@@ -332,25 +334,25 @@ def main(
         )
     else:
         # If no tracker is used, open the reports in the browser
-        DeepchecksVisualizer().visualize(data_integrity_step)
-        DeepchecksVisualizer().visualize(data_drift_step)
-        DeepchecksVisualizer().visualize(model_evaluator_step)
-        DeepchecksVisualizer().visualize(train_test_model_evaluator_step)
+        EvidentlyVisualizer().visualize(data_quality_step)
+        EvidentlyVisualizer().visualize(data_drift_step)
+        EvidentlyVisualizer().visualize(model_evaluator_step)
+        EvidentlyVisualizer().visualize(train_test_model_evaluator_step)
 
-        # To generate the Deepchecks reports as PDF files, uncomment the following lines:
+        # To generate the Evidently reports as PDF files, uncomment the following lines:
         #
         # NOTE: you also need to install `wkhtmltopdf` on your machine for this
-        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`). 
+        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`).
         #
-        # deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
-        # deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")
-        # deepcheck_suite_to_pdf(
-        #     model_evaluator_step, "model_evaluator_report.pdf"
-        # )
-        # deepcheck_suite_to_pdf(
-        #     train_test_model_evaluator_step,
-        #     "train_test_model_evaluator_report.pdf",
-        # )
+        data_validation_report_to_pdf(data_quality_step, "data_integrity_report.pdf")
+        data_validation_report_to_pdf(data_drift_step, "data_drift_report.pdf")
+        data_validation_report_to_pdf(
+            model_evaluator_step, "model_evaluator_report.pdf"
+        )
+        data_validation_report_to_pdf(
+            train_test_model_evaluator_step,
+            "train_test_model_evaluator_report.pdf",
+        )
 
 
 if __name__ == "__main__":

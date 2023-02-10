@@ -24,6 +24,7 @@ import requests
 
 
 DATASET_TARGET_COLUMN_NAME = "target"
+DATASET_PREDICTION_COLUMN_NAME = "prediction"
 
 
 def download_dataframe(
