@@ -168,7 +168,7 @@ reproducibility and caching of the pipeline runs.
     the local stack and use the one that is already configured in the demo server:
 
     ```bash
-    zenml stack use devweek_local_stack
+    zenml stack set devweek_local_stack
     ```
 
     If you are not connected to the demo server, you can set up your local stack
@@ -328,7 +328,7 @@ multi-tenant Kubeflow orchestrator) locally
     the local stack and use the one that is already configured in the demo server:
 
     ```bash
-    zenml stack use devweek_aws_stack
+    zenml stack set devweek_aws_stack
     ```
 
     You can take a look at the `stacks/setup_aws_stack.py` script to see how the
