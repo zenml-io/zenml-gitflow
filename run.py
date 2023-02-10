@@ -346,7 +346,7 @@ def main(
     )
     print(report)
     if get_tracker_name() and get_tracking_uri().startswith("file"):
-        # If mlflow is used as a tracker, print the command to run the UI
+        # If mlflow is used as a local tracker, print the command to run the UI
         # The reports are accessible as artifacts in the mlflow tracker
         print(
             "NOTE: you have to manually start the MLflow UI by running e.g.:\n "

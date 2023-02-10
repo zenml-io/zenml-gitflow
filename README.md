@@ -46,59 +46,61 @@
 
 ## 🖼️ Overview
 
-This repository showcases how ZenML can be used for machine learning with a
-GitHub workflow that automates CI/CD with continuous model training and
-continuous model deployment to production. This allows data scientists to
-experiment with data processing and model training locally and then have code
-changes automatically tested and validated through the standard GitHub PR peer
-review process. Changes that pass the CI and code-review are then deployed
-automatically to production.
+This repository showcases how ZenML can be used to incrementally build an
+end-to-end production ML pipeline, starting locally and eventually scaling it
+onto a production-ready tool stack. The pipeline contains built-in best
+practices implemented using data validators such as Evidently, experiment
+trackers such as MLflow, and model serving tools such as KServe.
 
-This repository is also meant to be used as a template: you can fork it and
-easily adapt it to your own MLOps stack, infrastructure, code and data.
+The end-to-end pipeline can be shown as being constructed in several stages:
 
-Here's an architecture diagram of what this can look like:
+**Stage 1 - _local experimentation_**
+This stage features the first version of the pipeline, which is
+_a model training pipeline_ that can be run locally as part of an iterative
+experimentation workflow. It only goes as far as training a model without
+actually serving it, but it already covers experiment tracking through a local
+MLflow server and model evaluation and data validation performed using
+Evidently.
 
-<img src="_assets/pipeline_architecture.png" alt="Pipeline being run on staging/production stack through ci/cd" width="800"/>
+**Stage 2 - _staging for production_**
+In this second stage, a number of steps that are important in production are
+added to the model training pipeline, resulting in _an end-to-end pipeline_ that
+also covers model serving. The end-to-end pipeline includes a local
+MLflow model serving step and other steps that together implement the same
+continuous deployment workflow that will be used in production.
 
+This stage can be thought of as a prelude to running continuous model training
+and deployment in production. The end-to-end pipeline is still run on a local
+machine and using local-only components, but it is now ready to be ported to a
+production-ready stack.
 
-The workflow works as follows:
+Aside from the model deployment step, the end-to-end pipeline also features a
+steps that are used to compare the performance of a newly trained model against
+the performance of the model already being served, if one exists.
 
-A data scientist wants to make improvements to the ML pipeline. They clone the 
-repository, create a new branch, and experiment with new models or data 
-processing steps on their local machine.
+**Stage 3 - _production_**
 
-<img src="_assets/pipeline_local.png" alt="Pipeline with local stack" width="500"/>
+The third stage is about porting and run the end-to-end pipeline to a
+production-ready stack with no changes to the machine learning code. This is
+where the ability to build portable pipelines with ZenML really comes through.
 
+You'll need to configure a production-ready ZenML stack, or use the one already
+pre-configured for you). The pre-configured stack consists of a remote MLflow
+server, an S3 artifact store, a multi-tenant Kubeflow orchestrator and a KServe
+model server, all running in AWS.
 
-Once the data scientist thinks they have improved the pipeline, they create a 
-pull request for his branch on GitHub. This automatically triggers a GitHub Action 
-that will run the same pipeline in the staging environment (e.g. a pipeline 
-running on a cloud stack in GCP), potentially with different test data. As long
-as the  pipeline does not run successfully in the staging environment, the PR
-cannot be  merged. The pipeline also generates a set of metrics and test results
-that are automatically published to the PR, where they can be peer-reviewed to
-decide if the changes should be merged.
+This stage also requires connecting your local ZenML client to a remote ZenML
+server which is reachable from the production-ready AWS environment. Please note
+that a remote ZenML server could also have been used in the previous stages,
+but here it becomes mandatory.
 
-<img src="_assets/pipeline_staging.png" alt="Pipeline with staging stack" width="500"/>
-
-Once the PR has been reviewed and passes all checks, the branch is merged into 
-main. This automatically triggers another GitHub Action that now runs a 
-pipeline in the production environment, which trains the same model on 
-production data, runs some checks to compare its performance with the model
-currently served in production and then, if all checks pass, automatically
-deploys the new model.
-
-<img src="_assets/pipeline_prod.png" alt="Pipeline with production stack" width="500"/>
-
-The pipeline implementations follow a set of best practices for MLOps summarized
-below:
+These are some of the MLOps best practices that are showcased in this example: 
 
 * **Experiment Tracking**: All experiments are logged with an experiment tracker
 (MLflow), which allows for easy comparison of different runs and models and
 provides quick access to visualization and validation reports.
-* **Data and Model validation**: The pipelines include a set of Deepchecks-powered
-steps that verify integrity of the data and evaluate the model after
+* **Data and Model validation**: The pipelines include a set of Evdently-powered
+steps that verify the quality of the data and evaluate the model after
 training. The results are gathered, analyzed and then a report is generated with
 a summary of the findings and a suggested course of action. This provides useful
 insights into the quality of the data and the performance of the model and helps to
@@ -106,14 +108,10 @@ catch potential issues early on, before the model is deployed to production.
 * **Pipeline Tracking**: All pipeline runs and their artifacts are of course
 versioned and logged with ZenML. This enables features such as lineage tracking,
 provenance, caching and reproducibility.
-* **Continuous Integration**: All changes to the code are tested and validated
-automatically using GitHub Actions. Only changes that pass all tests are merged
-into the main branch. This applies not only to the code itself, but also to
-the ML artifacts, such as the data and the model.
-* **Continuous Deployment**: When a change is merged into the main branch, it is
-automatically deployed to production using ZenML and GitHub Actions. There are also
-additional checks in place to ensure that the model is not deployed if it is
-not fit for production or performs worse than the model currently deployed.
+* **Continuous Deployment**: When a new model is trained, it is automatically
+deployed to production. There are also additional checks in place to ensure that
+the model is not deployed if it is not fit for production or performs worse than
+the model currently deployed.
 * **Software Dependency Management**: All software dependencies are managed
 in a way that guarantees full reproducibility and are automatically installed
 by ZenML in the pipeline runtime environments. Python package versions are frozen
@@ -121,22 +119,13 @@ and pinned to ensure that the pipeline runs are fully reproducible.
 * **Reproducible Randomness**: All randomness is controlled and seeded to ensure
 reproducibility and caching of the pipeline runs.
 
-## 📦 Local workflow for development and experimentation
+## 🏇 How to run
 
-This workflow is meant to be run on a local machine by someone who wants to make
-local code changes e.g. to build a better model or to use a different
-data source. Aside from training the model, the training pipeline also includes
-a set of Deepchecks steps that check the data integrity and evaluate the model.
-The results are gathered, analyzed and then a report with the results is
-generated and printed out.
-
-### 🏇 How to run
-
-1. Clone the repository and create a development branch
+1. Clone the repository and checkout the `devweek-demo` branch
 
 ```
 git clone git@github.com:zenml-io/zenml-gitflow.git
-git checkout -b <your-branch-name>
+git checkout -b devweek-demo
 ```
 
 2. Install local requirements in a virtual environment
@@ -147,7 +136,41 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Set up your local stack
+3. (optional) Connect to a remote ZenML server
+
+You should use the https://demo.zenml.io/ remote ZenML server early on, even
+if this is only required in the final stage, for the following reasons:
+
+* all stacks showcased in this example are already configured in the demo
+server, so you don't have to configure them yourself:
+  * [the local stack](https://demo.zenml.io/workspaces/default/stacks/187e8d06-b3af-4f20-8435-fa1a628a09dd/component?page=1)
+  * [the AWS stack](https://demo.zenml.io/workspaces/default/stacks/c421ce43-9a10-4738-a91b-f71f0e25290f/component?page=1)
+* the demo server is an open server that is available to everyone, so you can
+share the link to the ZenML UI with anyone who is interested in seeing live
+results of your pipeline runs:
+  * [training pipeline runs](https://demo.zenml.io/workspaces/default/pipelines/355bc31f-8fe4-4e84-904a-b2f62b33fc1e/runs?page=1)
+  * [end-to-end pipeline runs](https://demo.zenml.io/workspaces/default/pipelines/a1de5f98-2320-4934-befb-5c2e46e45c18/runs?page=1)
+
+To connect to the demo server, you can run the following command with the
+provided username and password credentials:
+
+```
+zenml connect --url https://demoserver.zenml.io --username ZENML_USERNAME --password ZENML_PASSWORD
+```
+
+### 📦 Stage 1: local experimentation
+
+1. Set up your local stack
+
+If you are already connected to the demo server, you can skip configuring
+the local stack and use the one that is already configured in the demo server:
+
+```bash
+zenml stack use devweek_local_stack
+```
+
+If you are not connected to the demo server, you can set up your local stack
+by running:
 
 ```
 stacks/setup_local_stack.sh
@@ -155,201 +178,185 @@ stacks/setup_local_stack.sh
 
 NOTE: this script registers a stack that consists of the following components:
 
-* the default local orchestrator and artifact store
+* a local orchestrator and artifact store
 * a local MLflow tracking server
-* a local MLflow model deployer
-* Deepchecks as a data/model validator
+* a local MLflow model deployer (only used in the next stage)
+* Evidently as a data/model validator
 
-4. Iterate on making local code changes and run the training pipeline locally to
-test your changes:
+2. Run the training pipeline locally
 
 ```
 python run.py
 ```
 
-A report will be printed to the console and the model as well as the metrics
-and check results generated by Deepchecks will be saved in the MLflow experiment
-tracker. You can view the results in the MLflow UI by starting the MLFlow UI
-server on your local machine, as instructed in the run output.
+3. View the results
 
-You can optionally exercise the end-to-end workflow locally by running the
-pipeline involved in the GitHub automated CI/CD workflow. The end-to-end
-pipeline adds model deployment to model training. It also includes steps that
-compare the performance of the recently trained model with the performance of
-the model currently deployed:
+A report will be printed to the console and the model and the model metrics
+and check results generated by Evidently will be saved in the MLflow experiment
+tracker. To view the results in the local MLflow UI you'll have to manually
+start the MLFlow UI server on your local machine, as instructed in the run
+output.
+
+If you're connected to the demo server, the pipeline run can also be viewed
+[in the ZenML dashboard](https://demo.zenml.io/workspaces/default/pipelines/355bc31f-8fe4-4e84-904a-b2f62b33fc1e/runs?page=1).
+
+The following Evidently reports will be generated:
+
+* a data quality report for the entire data used as input
+* a data drift report that compares the training and test datasets and
+points out any differences that might indicate causes for variance in the
+trained model
+* a model evaluation report that measures the performance of the trained model
+on the test dataset
+* a train-test model evaluation report that is a side-by-side comparison of
+how the trained model performs on the training and test datasets
+
+4. Look at the code
+
+You can take a look at the training pipeline definition in `pipelines/training.py`
+and the steps that are part of it in `steps/`.
+
+5. Make changes and run the pipeline again
+
+You can make changes to the various step parameters configured in `run.py` and
+then run the pipeline again to see how the results change. Some steps will be
+cached, but you can force a re-run by passing the `--disable-caching` flag to
+the `run.py` script.
+
+### 📦 Stage 2: staging for production
+
+1. Run the end-to-end pipeline locally
+
+Now you can exercise the end-to-end workflow locally by running it on the same
+stack. The end-to-end pipeline adds continuous model deployment to model
+training. It also includes steps that compare the performance of the recently
+trained model with the performance of the model currently deployed:
 
 ```
 python run.py --pipeline=end-to-end
 ```
 
-5. When you're ready, push a PR with your changes to `main`. This will trigger
-the GitHub CI workflow that will check your code changes using a different
-stack running on Vertex AI in GCP!
+2. View the results
 
-## 📦 GitHub staging workflow for automated CI
+A report will be printed to the console and the model and the model metrics
+and check results generated by Evidently will be saved in the MLflow experiment
+tracker.
 
-This workflow is meant to be run as part of a automated gating CI/CD job that is
-triggered to test code changes before they are incorporated into the main
-repository branch on GitHub.
+If you're connected to the demo server, the pipeline run can also be viewed
+[in the ZenML dashboard](https://demo.zenml.io/workspaces/default/pipelines/a1de5f98-2320-4934-befb-5c2e46e45c18/runs?page=1).
 
-### 🏇 How to trigger
+The pipeline results in an MLflow model being deployed locally. You can view
+all the deployed models by running:
 
-1. publish a PR with your code changes to the GitHub repository, or push
-additional to an existing PR.
-
-2. this next part is automated with the help of GitHub Actions. A GitHub
-workflow is triggered automatically when PR code changes are detected. The
-workflow will run the same training pipeline as in the local setup, but this
-time it will use a different dataset as input, a remote ZenML server and a cloud
-ZenML stack consisting of the following:
-
-* a Vertex AI orchestrator
-* a GCS artifact store
-* a remote MLflow tracking server
-* Deepchecks as a data/model validator
-
-The training results will be saved in the remote MLflow tracking server and the
-report will be attached to the PR as a comment, where it can be analyzed by
-other team members as part of the PR review process.
-
-3. When the PR is merged to `main`, the production workflow is triggered and
-will deploy a new model to production with AWS and Kubeflow!
-
-### 🏇 How to run locally
-
-If you need to run the GitHub staging workflow locally e.g. to debug it or to
-update it, you can do so by replicating [the steps in the staging GitHub workflow](./.github/workflows/staging.yaml).
-However, you need to be granted write access to the remote ZenML server and 
-credentials to access cloud resources used in the stack, which is why you should
-fork the repository, deploy ZenML and run the workflow on your own stack.
-
-Assuming you have already done so, this is how you can run the workflow locally:
-
-1. Install cloud requirements in a virtual environment (these are different
-from the local requirements because you're using a GCP cloud stack):
-
-```
-virtualenv .venv-staging
-source .venv-staging/bin/activate
-pip install -r requirements-gcp.txt
+```bash
+zenml model-deployer models list
 ```
 
-2. Connect to the remote ZenML server (NOTE: the default local ZenML deployment
-or a local ZenML server will not work because there are remote components in the
-stack that also need to access the remote ZenML server):
+The first time you run the end-to-end pipeline locally, the same Evidently
+reports will be generated as in the previous stage. However, if you run the
+pipeline again, you will also get a new Evidently report that compares the
+performance of the newly trained model with the performance of the model that
+is currently deployed.
+
+4. Look at the code
+
+You can take a look at the training pipeline definition in `pipelines/end_to_end.py`
+and the steps that are part of it in `steps/`.
+
+5. Make changes and run the pipeline again
+
+You can make changes to the various step parameters configured in `run.py` and
+then run the pipeline again to see how the results change. Some steps will be
+cached, but you can force a re-run by passing the `--disable-caching` flag to
+the `run.py` script.
+
+If a new model is trained and if it passes the model evaluation checks, it will
+be deployed in place of the currently deployed model.
+
+NOTE: there is a known issue with updating a deployed MLflow model. If you
+run into an error when the end-to-end pipeline is trying to deploy a new model,
+you can simply re-run the pipeline again and it should work.
+
+### 📦 Stage 3: production
+
+This is where you scale your pipeline to run on a remote ZenML server (if you
+aren't already using one) and on a cloud ZenML stack with zero code changes.
+
+In this stage you will use an AWS cloud stack. The stack is already configured
+in the demo ZenML server, but you still need to install some prerequisites and
+set up local credentials in order to use it on your local machine. You'll need:
+
+* an AWS account
+* the AWS CLI installed and configured to use your AWS account
+* Docker installed
+* the Kubernetes client (kubectl) installed 
+
+1. Connect to the https://demo.zenml.io/ ZenML server
 
 ```
-zenml connect --url <ZENML_HOST> --username <ZENML_USERNAME> --password <ZENML_PASSWORD>
-```
-3. Authenticate to GCP:
-
-```
-gcloud auth configure-docker --project zenml-demos
+zenml connect --url https://demoserver.zenml.io --username ZENML_USERNAME --password ZENML_PASSWORD
 ```
 
-4. Register and/or activate your GCP stack:
+2. Authenticate to use the AWS cloud stack components (ECR, EKS, the
+multi-tenant Kubeflow orchestrator) locally
 
-```
-stacks/setup_staging_stack.sh
+You'll need your AWS account credentials to be properly configured on your
+local machine for this to work:
 
-# or
+```bash
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.eu-central-1.amazonaws.com
+aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
 
-zenml stack set gcp_gitflow_stack
-```
-
-5. Run the staging workflow:
-
-```
-python run.py --requirements=requirements-gcp.txt --dataset staging
-```
-
-
-## 📦 GitHub production workflow for automated CD
-
-This workflow is meant to be run as part of a automated continuous deployment
-job that is used to deploy a new model to production whenever a change is merged
-into the main repository branch on GitHub.
-
-### 🏇 How to trigger
-
-1. merge a PR to the main branch in the GitHub repository, or push
-changes directly to the main branch.
-
-2. this next part is automated with the help of GitHub Actions. A GitHub
-workflow is triggered automatically when code changes land in the main branch.
-The workflow will run an end-to-end pipeline that goes through model training,
-same as the training pipeline, compares the model to the one already deployed
-in production, then deploys the new model if it passes tests. This workflow
-uses a remote ZenML server and a cloud ZenML stack consisting of the
-following:
-
-* a Kubeflow orchestrator deployed in an AWS EKS cluster
-* an S3 artifact store
-* a remote MLflow tracking server
-* Deepchecks as a data/model validator
-* KServe as a model deployer, running on the same EKS cluster
-
-### 🏇 How to run locally
-
-If you need to run the GitHub staging workflow locally e.g. to debug it or to
-update it, you can do so by replicating [the steps in the GitHub production workflow](./.github/workflows/production.yaml).
-However, you need to be granted write access to the remote ZenML server and 
-credentials to access cloud resources used in the stack, which is why you should
-fork the repository, deploy ZenML and run the workflow on your own stack.
-
-Assuming you have already done so, this is how you can run the workflow locally:
-
-1. Install cloud requirements in a virtual environment (these are different
-from the local requirements because you're using a GCP cloud stack):
-
-```
-virtualenv .venv-prod
-source .venv-prod/bin/activate
-pip install -r requirements-aws.txt
+# These are needed to authenticate to the Kubeflow orchestrator
+export KUBEFLOW_USERNAME=...
+export KUBEFLOW_PASSWORD=...
+export KUBEFLOW_NAMESPACE=...
 ```
 
-2. Connect to the remote ZenML server (NOTE: the default local ZenML deployment
-or a local ZenML server will not work because there are remote components in the
-stack that also need to access the remote ZenML server):
+3. Run the end-to-end pipeline on the cloud stack
+
+Now you can finally run the same end-to-end pipeline that you used in the
+previous stage, only this time you'll be using a full-fledge production-ready
+stack:
 
 ```
-zenml connect --url <ZENML_HOST> --username <ZENML_USERNAME> --password <ZENML_PASSWORD>
+python run.py --pipeline=end-to-end
 ```
 
-3. Authenticate to AWS:
+4. View the results
 
-```
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
-aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias zenml-eks
-```
+A report will be printed to the console and the model and the model metrics
+and check results generated by Evidently will be saved in the remote MLflow
+experiment tracker and can be accessed using the URL printed on screen.
 
-4. Set up environment variables to access the multi-user Kubeflow orchestrator:
+NOTE: You'll need an MLFlow tracker username and password to access the remote
+MLFlow UI.
 
-```
-export KUBEFLOW_USERNAME=<username>
-export KUBEFLOW_PASSWORD=<password>
-export KUBEFLOW_NAMESPACE=<namespace>
-```
+The pipeline run can also be viewed
+[in the ZenML dashboard](https://demo.zenml.io/workspaces/default/pipelines/a1de5f98-2320-4934-befb-5c2e46e45c18/runs?page=1)
+and [in the Kubeflow dashboard](https://www.kubeflowshowcase.zenml.io/_/pipeline/?ns=production-demo#/runs).
 
-5. Register and/or activate your AWS stack:
+NOTE: You'll need to use the same `KUBEFLOW_USERNAME` and `KUBEFLOW_PASSWORD`
+credentials to access the Kubeflow dashboard. 
 
-```
-stacks/setup_prod_stack.sh
+The pipeline results in a KServe model being deployed locally. You can view
+all the deployed models by running:
 
-# or
-
-zenml stack set aws_gitflow_stack
+```bash
+zenml model-deployer models list
 ```
 
-6. Run the staging workflow:
+The same Evidently reports will be generated as in the previous stage.
 
-```
-python run.py \
-            --pipeline end-to-end \
-            --requirements requirements-aws.txt \
-            --model iris-classifier \
-            --dataset production
-```
+5. Make changes and run the pipeline again
+
+You can make changes to the various step parameters configured in `run.py` and
+then run the pipeline again to see how the results change. Some steps will be
+cached, but you can force a re-run by passing the `--disable-caching` flag to
+the `run.py` script.
+
+If a new model is trained and if it passes the model evaluation checks, it will
+be deployed in place of the currently deployed KServe model.
 
 ## 📦 Software requirements management
 
@@ -360,21 +367,16 @@ Python packages to be pinned to very specific versions, including ZenML itself.
 A series of `requirements.in` files are maintained to contain loosely defined
 package dependencies that are either required by the project or derived from the
 ZenML integrations. A tool like `pip-compile` is then used to generate frozen
-versions of those requirements that are used in the CI/CD pipelines to guarantee
+versions of those requirements that are used when running pipelines to guarantee
 deterministic builds and pipeline runs.
 
 * `requirements-base.in` contains the base requirements for the project,
 including ZenML itself. Note that these are not requirements that are otherwise
-managed by ZenML as integrations (e.g. deepchecks, scikit-learn, etc.).
-* `requirements-local.in` contains the requirements needed by the local stack.
-* `requirements-gcp.in` contains the requirements needed by the GCP stack.
-* `requirements-aws.in` contains the requirements needed by the AWS stack.
-* `requirements.txt` are frozen package requirements that you use in your
-local development workflow.
-* `requirements-gcp.txt` are frozen package requirements that you use in your
-GCP staging workflow.
-* `requirements-aws.txt` are frozen package requirements that you use in your
-AWS production workflow.
+managed by ZenML as integrations (e.g. evidently, scikit-learn, etc.).
+* `requirements.in` contains the requirements needed for both the local and AWS
+stacks.
+* `requirements.txt` are frozen package requirements that you use to run
+pipelines locally.
 
 ### 🏇 How to update requirements
 
@@ -393,85 +395,35 @@ reflect the changes.
 
 Example: you update ZenML to version 0.50.0:
 
-1. Update the ZenML version in `requirements.in`:
+1. install the new ZenML version and the `pip-tools` package:
 
 ```
-zenml==0.50.0
+pip install zenml[server]==0.50.0
+pip install pip-tools
 ```
 
-2. Run `zenml integration export-requirements` commands to extract the
+2. Update the ZenML version in `requirements.in`:
+
+```
+zenml[server]==0.50.0
+```
+
+3. Run `zenml integration export-requirements` commands to extract the
 dependencies required by all the integrations used for each workflow and update
-the corresponding `requirements.in` files:
+the `requirements.in` file:
 
 ```
-# for the local workflow; these should go in requirements-local.in
-zenml integration export-requirements sklearn mlflow deepchecks
-# for the staging (GCP) workflow; these should go in requirements-gcp.in
-zenml integration export-requirements sklearn mlflow deepchecks gcp
-# for the staging (AWS) workflow; these should go in requirements-aws.in
-zenml integration export-requirements sklearn mlflow deepchecks kubeflow s3 aws kserve
+zenml integration export-requirements sklearn mlflow evidently kubeflow s3 aws kserve
 ```
 
-3. Run `pip-compile` to update the frozen requirements files:
+3. Run `pip-compile` to update the frozen requirements file:
 
 ```
-pip-compile -v -o requirements.txt requirements-base.in requirements-local.in  --resolver=backtracking
-pip-compile -v -o requirements-gcp.txt requirements-base.in requirements-gcp.in  --resolver=backtracking
-pip-compile -v -o requirements-aws.txt requirements-base.in requirements-aws.in  --resolver=backtracking
+pip-compile -v -o requirements.txt requirements-base.in requirements.in  --resolver=backtracking
 ```
 
-4. Commit the changes to the `requirements.in` and `requirements.txt` files.
-
-5. (Optional) Update the local python virtual environment that you are using for
-development:
+4. Update the local python virtual environment:
 
 ```
 pip install -r requirements.txt
 ```
-
-## 📦 How to fork and use this repository template
-
-Create a new repository from this template by clicking the "Use this template"
-button on the top right of the GitHub repository page. This will create a new
-repository in your GitHub account that is a copy of this one.
-
-You'll need to set up a few more things to connect your new repository to a
-ZenML server and a cloud stack:
-
-* [deploy a ZenML server using a method of your choice](https://docs.zenml.io/getting-started/deploying-zenml)
-somewhere where the GitHub Actions workflows can access it (e.g. in the cloud, on a server or local
-machine with a public IP, etc.)
-* set up the resources needed by the ZenML stacks that you'll be using for the
-staging and production workflows. You can use one of the
-[ZenML MLOps recipes](https://docs.zenml.io/advanced-guide/practical-mlops/stack-recipes)
-to speed this up. You'll need the following components to be part of your stack:
-  * a remote [ZenML artifact store](https://docs.zenml.io/component-gallery/artifact-stores) (e.g. GCS, S3, etc.)
-  * a remote [ZenML orchestrator](https://docs.zenml.io/component-gallery/orchestrators) (e.g. Kubeflow, Airflow, Vertex AI or a basic Kubernetes orchestrator)
-  * (optional) a remote [MLFlow experiment tracker](https://docs.zenml.io/component-gallery/experiment-trackers/mlflow).
-  Alternatively, you can use a different experiment tracker if you make changes
-  to the code to use it instead of MLFlow.
-  * a Kubernetes cluster with the [KServe model deployer](https://docs.zenml.io/component-gallery/model-deployers/kserve)
-  installed. NOTE: due to a current ZenML limitation, KServe needs to be
-  installed in the same Kubernetes cluster as the orchestrator. Alternatively,
-  you can use a different model deployer if you make changes to the code to use
-  a different model deployment step.
-  * (optional) [a secrets manager](https://docs.zenml.io/component-gallery/secrets-managers)
-  is recommended to store the credentials for the other stack components. The
-  secrets manager service also needs to be accessible from the runtime used
-  to run pipelines.
-
-Once you have the ZenML server and the cloud stack set up, you'll need to do the
-following to update the repository with the information about your own
-environments:
-
-1. Register the stack(s) that you'll be using for the local, staging and
-production workflows. Take a look at the `stacks` directory to see an example
-of how the stacks are defined.
-
-2. Update the software dependencies in the `requirements.in` files to match
-your own project requirements.
-
-3. Update the GitHub workflow files to reference the correct secrets.
-
-4. Finally, configure your GitHub action secrets to contain the information
-needed to connect to your ZenML server and cloud stack.

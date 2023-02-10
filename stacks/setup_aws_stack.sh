@@ -7,8 +7,8 @@ msg() {
 set -Eeo pipefail
 
 # These settings are hard-coded at the moment
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
-aws eks --region us-east-1 update-kubeconfig --name zenhacks-cluster --alias zenml-eks
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.eu-central-1.amazonaws.com
+aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias kubeflowmultitenant
 
 zenml secrets-manager register aws_secrets_manager \
   --flavor=aws --region_name=eu-central-1 || \
@@ -16,15 +16,17 @@ zenml secrets-manager register aws_secrets_manager \
 
 zenml experiment-tracker register aws_mlflow_tracker --flavor=mlflow \
   --tracking_insecure_tls=true \
-  --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" \
+  --tracking_uri="https://mlflow.develaws.zenml.io/" \
   --tracking_username="{{mlflow_secret.tracking_username}}" \
   --tracking_password="{{mlflow_secret.tracking_password}}" || \
   msg "${WARNING}Reusing preexisting experiment tracker ${NOFORMAT}aws_mlflow_tracker"
 
-zenml orchestrator register multi_tenant_kubeflow \
+zenml orchestrator register aws_multi_tenant_kubeflow \
   --flavor=kubeflow \
   --kubernetes_context=kubeflowmultitenant \
-  --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline || \
+  --kubeflow_hostname=https://www.kubeflowshowcase.zenml.io/pipeline \
+  --synchronous=true \
+  --timeout=1200 || \
   msg "${WARNING}Reusing preexisting orchestrator ${NOFORMAT}multi_tenant_kubeflow"
 
 zenml artifact-store register s3_store -f s3 --path=s3://zenfiles || \
@@ -54,19 +56,19 @@ zenml model-deployer register kserve_s3 --flavor=kserve \
 zenml data-validator register evidently --flavor=evidently || \
   msg "${WARNING}Reusing preexisting data validator ${NOFORMAT}evidently"
 
-zenml stack register aws_stack \
+zenml stack register devweek_aws_stack \
     -a s3_store \
     -c ecr_registry \
-    -o multi_tenant_kubeflow \
+    -o aws_multi_tenant_kubeflow \
     -x aws_secrets_manager \
     -d kserve_s3 \
     -dv evidently \
     -e aws_mlflow_tracker \
     -i local_image_builder || \
-  msg "${WARNING}Reusing preexisting stack ${NOFORMAT}kubeflow_stack"
+  msg "${WARNING}Reusing preexisting stack ${NOFORMAT}devweek_aws_stack"
 
-zenml stack set aws_stack
-zenml stack share aws_stack
+zenml stack set devweek_aws_stack
+zenml stack share -r devweek_aws_stack
 
 zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
 

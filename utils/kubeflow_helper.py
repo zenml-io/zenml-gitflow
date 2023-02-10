@@ -29,6 +29,13 @@ def get_kubeflow_settings() -> dict:
         USERNAME = os.getenv("KUBEFLOW_USERNAME")  # This is the username for the profile you want to use
         PASSWORD = os.getenv("KUBEFLOW_PASSWORD")  # This is the password for the profile you want to use
 
+        if not NAMESPACE or not USERNAME or not PASSWORD:
+            raise AssertionError(
+                "You must set the `KUBEFLOW_NAMESPACE`, `KUBEFLOW_USERNAME` and "
+                "`KUBEFLOW_PASSWORD` environment variables to use the Kubeflow "
+                "orchestrator. Please set these variables and try again."
+            )
+
         def get_kfp_token(username: str, password: str) -> str:
             """Get token for kubeflow authentication."""
             # Resolve host from active stack
