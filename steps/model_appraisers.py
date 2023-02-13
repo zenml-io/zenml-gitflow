@@ -162,7 +162,7 @@ def model_analysis(
         log_text(html_report, f"{name}.html")
         check_passed = True
         if name == "train_test_data_drift_report":
-            result = report.object()["data_drift"]["data"]["metrics"][
+            check_passed = report.object()["data_drift"]["data"]["metrics"][
                 "dataset_drift"
             ]
         results.append(check_passed)
