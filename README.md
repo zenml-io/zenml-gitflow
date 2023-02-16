@@ -1,5 +1,7 @@
 # ZenML - Building an End-to-End Production MLOps Pipeline 
 
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=95063e05-fd60-4133-af6d-cb7291142f18" />
+
 <div align="center">
   <a href="https://zenml.io">
     <img src="_assets/zenml_logo.png" alt="Logo" width="400">
@@ -303,7 +305,7 @@ set up local credentials in order to use it on your local machine. You'll need:
 1. Connect to the https://demo.zenml.io/ ZenML server
 
     ```
-    zenml connect --url https://demoserver.zenml.io --username ZENML_USERNAME --password ZENML_PASSWORD
+    zenml connect --url https://demoserver.zenml.io --username $ZENML_USERNAME --password $ZENML_PASSWORD
     ```
 
 2. Authenticate to use the AWS cloud stack components (ECR, EKS, the
