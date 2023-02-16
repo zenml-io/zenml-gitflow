@@ -1,7 +1,5 @@
 # ZenML - Building an End-to-End Production MLOps Pipeline 
 
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=95063e05-fd60-4133-af6d-cb7291142f18" />
-
 <div align="center">
   <a href="https://zenml.io">
     <img src="_assets/zenml_logo.png" alt="Logo" width="400">
