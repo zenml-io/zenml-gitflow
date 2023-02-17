@@ -1,3 +1,5 @@
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=fe9bfd0e-c7df-4d21-bc4c-cc7772f11079" />
+
 # ZenML - GitHub Action Workflow
 
 <div align="center">
