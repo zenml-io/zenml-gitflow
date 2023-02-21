@@ -111,9 +111,9 @@ def data_splitter(
     )
     
     # # Add some random noise
-    # train[DATASET_TARGET_COLUMN_NAME] = (
-    #     train[DATASET_TARGET_COLUMN_NAME].apply(
-    #         lambda s: s * random.randint(0, 1)
-    #     )
-    # )
+    train[DATASET_TARGET_COLUMN_NAME] = (
+        train[DATASET_TARGET_COLUMN_NAME].apply(
+            lambda s: s * random.randint(0, 1)
+        )
+    )
     return train, test
