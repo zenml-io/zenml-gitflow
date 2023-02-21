@@ -14,10 +14,10 @@
 
 """Data loader steps for the Iris classification pipeline."""
 
-from enum import Enum
+import random
 from typing import Optional
 import pandas as pd
-from sklearn.datasets import load_breast_cancer, load_iris
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from zenml.steps import BaseParameters, Output, step
 import requests
@@ -109,4 +109,11 @@ def data_splitter(
         shuffle=params.shuffle,
         random_state=params.random_state,
     )
+    
+    # # Add some random noise
+    # train[DATASET_TARGET_COLUMN_NAME] = (
+    #     train[DATASET_TARGET_COLUMN_NAME].apply(
+    #         lambda s: s * random.randint(0, 1)
+    #     )
+    # )
     return train, test
