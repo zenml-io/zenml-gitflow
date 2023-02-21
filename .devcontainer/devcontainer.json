@@ -3,12 +3,13 @@
 {
 	"name": "Python 3",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:0-3.10",
+	"image": "mcr.microsoft.com/devcontainers/python:0-3.9",
 	"features": {
 		"ghcr.io/devcontainers/features/aws-cli:1": {},
 		"ghcr.io/devcontainers-contrib/features/flake8:2": {},
 		"ghcr.io/devcontainers-contrib/features/terraform-asdf:2": {},
-		"ghcr.io/devcontainers-contrib/features/kubectl-asdf:2": {}
+		"ghcr.io/devcontainers-contrib/features/kubectl-asdf:2": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
 	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -19,9 +20,11 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": [
-		"pip3 install --user -r requirements.txt",
+		"pip3 install --user -r requirements.txt --default-timeout=3600",
 		"export ZENML_DEBUG=1",
 		"export ZENML_LOGGING_VERBOSITY=INFO",
+		"export ZENML_ANALYTICS_OPT_IN=false",
+		"eval $(aws sts assume-role --role-arn $AWS_ROLE_ARN --role-session-name SandboxCodeSpaces --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text | awk '{print "export AWS_ACCESS_KEY_ID="$1"\nexport AWS_SECRET_ACCESS_KEY="$2"\nexport AWS_SESSION_TOKEN="$3}')",
 		"zenml connect --url https://demoserver.zenml.io --username $ZENML_USERNAME --password $ZENML_PASSWORD",
 		"zenml stack set devweek_local_stack",
 		"aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.eu-central-1.amazonaws.com",
