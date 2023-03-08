@@ -7,7 +7,6 @@ export GOOGLE_APPLICATION_CREDENTIALS=~/.ssh/google-demos.json
 gcloud auth configure-docker --project zenml-demos 
 
 zenml data-validator register deepchecks_data_validator --flavor=deepchecks
-zenml secrets-manager register gcp_secrets_manager --flavor=gcp --project_id=zenml-demos
 zenml experiment-tracker register gcp_mlflow_tracker  --flavor=mlflow --tracking_insecure_tls=true --tracking_uri="http://35.246.148.181/mlflow/" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" 
 zenml orchestrator register vertex_ai_orchestrator \
   --flavor=vertex \
@@ -25,7 +24,6 @@ zenml stack register gcp_gitflow_stack \
     -a gcp_store \
     -c gcp_registry \
     -o vertex_ai_orchestrator \
-    -x gcp_secrets_manager \
     -dv deepchecks_data_validator \
     -e gcp_mlflow_tracker \
     -i local_image_builder || \
@@ -35,4 +33,4 @@ zenml stack set gcp_gitflow_stack
 zenml stack share gcp_gitflow_stack
 
 echo "In the following prompt, please set the `tracking_username` key with value of your MLflow username and `tracking_password` key with value of your MLflow password. "
-zenml secrets-manager secret register mlflow_secret -i  # set tracking_username and tracking_password
+zenml secret create mlflow_secret -i  # set tracking_username and tracking_password

@@ -993,7 +993,7 @@ wrapt==1.14.1
     #   deprecated
 yarl==1.8.2
     # via aiohttp
-zenml==0.32.0
+zenml==0.35.1
     # via -r requirements-base.in
 zipp==3.11.0
     # via
