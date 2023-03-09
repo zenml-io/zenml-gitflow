@@ -431,7 +431,6 @@ prompt-toolkit==3.0.36
     # via ipython
 protobuf==3.20.3
     # via
-    #   -r requirements-local.in
     #   mlflow
     #   mlserver
 psutil==5.9.4
@@ -704,7 +703,7 @@ widgetsnbextension==3.6.1
     # via ipywidgets
 yarl==1.8.2
     # via aiohttp
-zenml==0.32.0
+zenml==0.35.1
     # via -r requirements-base.in
 zipp==3.11.0
     # via

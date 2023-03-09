@@ -6,7 +6,6 @@ set -Eeo pipefail
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
 aws eks --region us-east-1 update-kubeconfig --name zenhacks-cluster --alias zenml-eks
 
-zenml secrets-manager register aws_secrets_manager --flavor=aws --region_name=eu-central-1
 zenml experiment-tracker register aws_mlflow_tracker  --flavor=mlflow --tracking_insecure_tls=true --tracking_uri="https://ac8e6c63af207436194ab675ee71d85a-1399000870.us-east-1.elb.amazonaws.com/mlflow" --tracking_username="{{mlflow_secret.tracking_username}}" --tracking_password="{{mlflow_secret.tracking_password}}" 
 zenml orchestrator register multi_tenant_kubeflow \
   --flavor=kubeflow \
@@ -33,7 +32,6 @@ zenml stack register aws_gitflow_stack \
     -a s3_store \
     -c ecr_registry \
     -o multi_tenant_kubeflow \
-    -x aws_secrets_manager \
     -d kserve_s3 \
     -dv deepchecks_data_validator \
     -e aws_mlflow_tracker \
@@ -43,9 +41,7 @@ zenml stack register aws_gitflow_stack \
 zenml stack set aws_gitflow_stack
 zenml stack share aws_gitflow_stack
 
-zenml secrets-manager secret register -s kserve_s3 kservesecret --credentials="@~/.aws/credentials" 
+zenml secret create kservesecret --storage_type=S3 --credentials="@~/.aws/credentials" 
 
 echo "In the following prompt, please set the `tracking_username` key with value of your MLflow username and `tracking_password` key with value of your MLflow password. "
-zenml secrets-manager secret register mlflow_secret \
-  --tracking_username=<VALUE_1> \
-  --tracking_password=<VALUE_2>
+zenml secret create mlflow_secret -i  # set tracking_username and tracking_password

@@ -94,7 +94,7 @@ def load_trained_model(
     if len(pipeline.runs) == 0:
         print(f"No pipeline run found for pipeline {pipeline_name}.")
         return None
-    pipeline_run = pipeline.runs[-1]
+    pipeline_run = pipeline.runs[0]
     step = pipeline_run.get_step(step_name)
     if step is None:
         print(f"No step with name {step_name} found in pipeline run {pipeline_run.name}.")

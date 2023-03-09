@@ -161,6 +161,7 @@ google-api-core[grpc]==2.11.0
     #   google-api-python-client
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
+    #   google-cloud-build
     #   google-cloud-core
     #   google-cloud-functions
     #   google-cloud-resource-manager
@@ -189,6 +190,8 @@ google-cloud-aiplatform==1.21.0
     # via -r requirements-gcp.in
 google-cloud-bigquery==3.4.2
     # via google-cloud-aiplatform
+google-cloud-build==3.13.0
+    # via -r requirements-gcp.in
 google-cloud-core==2.3.2
     # via
     #   google-cloud-bigquery
@@ -223,6 +226,7 @@ greenlet==2.0.1
     #   sqlalchemy
 grpc-google-iam-v1==0.12.6
     # via
+    #   google-cloud-build
     #   google-cloud-functions
     #   google-cloud-resource-manager
     #   google-cloud-secret-manager
@@ -532,6 +536,7 @@ proto-plus==1.22.2
     # via
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
+    #   google-cloud-build
     #   google-cloud-functions
     #   google-cloud-resource-manager
     #   google-cloud-scheduler
@@ -542,6 +547,7 @@ protobuf==3.20.3
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
+    #   google-cloud-build
     #   google-cloud-functions
     #   google-cloud-resource-manager
     #   google-cloud-scheduler
@@ -872,7 +878,7 @@ wrapt==1.14.1
     # via deprecated
 yarl==1.8.2
     # via aiohttp
-zenml==0.32.0
+zenml==0.35.1
     # via -r requirements-base.in
 zipp==3.11.0
     # via

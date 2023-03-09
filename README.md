@@ -395,7 +395,7 @@ reflect the changes.
 
 Example: you update ZenML to version 0.50.0:
 
-1. Update the ZenML version in `requirements.in`:
+1. Update the ZenML version in `requirements-base.in`:
 
 ```
 zenml==0.50.0

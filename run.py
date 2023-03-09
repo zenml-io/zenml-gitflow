@@ -296,7 +296,7 @@ def main(
     # Run pipeline
     pipeline_instance.run(settings=settings, **pipeline_args)
 
-    pipeline_run = pipeline_instance.get_runs()[-1]
+    pipeline_run = pipeline_instance.get_runs()[0]
 
     if pipeline_run.status == ExecutionStatus.FAILED:
         print("Pipeline failed. Check the logs for more details.")
