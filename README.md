@@ -99,6 +99,8 @@ below:
 * **Experiment Tracking**: All experiments are logged with an experiment tracker
 (MLflow), which allows for easy comparison of different runs and models and
 provides quick access to visualization and validation reports.
+* **Model Registry**: All models are registered with a model registry (MLflow),
+which allows for the ease of versioning and deployment of models.
 * **Data and Model validation**: The pipelines include a set of Deepchecks-powered
 steps that verify integrity of the data and evaluate the model after
 training. The results are gathered, analyzed and then a report is generated with
@@ -160,6 +162,7 @@ NOTE: this script registers a stack that consists of the following components:
 * the default local orchestrator and artifact store
 * a local MLflow tracking server
 * a local MLflow model deployer
+* a local MLflow model registry
 * Deepchecks as a data/model validator
 
 4. Iterate on making local code changes and run the training pipeline locally to
@@ -208,6 +211,7 @@ ZenML stack consisting of the following:
 * a Vertex AI orchestrator
 * a GCS artifact store
 * a remote MLflow tracking server
+* a model registry that uses the remote MLflow tracking server
 * Deepchecks as a data/model validator
 
 The training results will be saved in the remote MLflow tracking server and the
@@ -288,6 +292,7 @@ following:
 * a Kubeflow orchestrator deployed in an AWS EKS cluster
 * an S3 artifact store
 * a remote MLflow tracking server
+* a model registry that uses the remote MLflow tracking server
 * Deepchecks as a data/model validator
 * KServe as a model deployer, running on the same EKS cluster
 
@@ -477,3 +482,43 @@ your own project requirements.
 
 4. Finally, configure your GitHub action secrets to contain the information
 needed to connect to your ZenML server and cloud stack.
+
+
+### 🏇 Use Code Repository on your forked repository
+
+Source code versioning is an essential part of software development that allows
+multiple developers to work on the same code base and provides traceability of
+all the changes made to code files. Using a code repository in ZenML enables
+unlocks the tracking of the code version that you use for your pipeline runs.
+
+Additionally, running a pipeline which is tracked in a registered code repository
+eliminates the need to rebuild Docker images for containerized stack components
+each time you change one of your source code files.
+
+To use a code repository in ZenML, you need to:
+
+1. Have a GitHub repository that contains the code for your project. You can
+fork this repository template to get started.
+
+2. Install the ZenML GitHub integration by adding it into your requirements
+files. You can follow the instructions in the [How to update requirements](#-how-to-update-requirements)
+
+3. Register the code repository in ZenML. You can do this by running the
+following command:
+
+```shell
+zenml code-repository register <NAME> --type=github --owner=<GITHUB_USERNAME> \
+    --repository=<REPOSITORY_NAME> --token=<PERSONAL_ACCESS_TOKEN>
+```
+
+where:
+
+* `<NAME>` is the name of the code repository that you want to register in ZenML
+* `<GITHUB_OWNER>` is the GitHub username of the owner of the repository, in case
+of a forked repository, this is the username of the owner of the forked repository
+* `<REPOSITORY_NAME>` is the name of the repository in GitHub it can be the same
+as the name of the code repository in ZenML.
+* `<PERSONAL_ACCESS_TOKEN>` is a GitHub personal access token that has the
+permissions to access the repository. You can read more about how to create a
+personal access token [here](https://docs.zenml.io/starter-guide/production-fundamentals/code-repositories#how-to-get-a-token-for-github).
+

@@ -17,9 +17,8 @@
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.client import Client
-from zenml.steps import BaseParameters, Output, step
 from sklearn.tree import DecisionTreeClassifier
+from zenml.steps import BaseParameters, Output, step
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import enable_autolog, get_tracker_name
@@ -59,7 +58,7 @@ def svc_trainer(
     train_dataset: pd.DataFrame,
 ) -> Output(model=ClassifierMixin, accuracy=float):
     """Train and logs a sklearn C-support vector classification model.
-    
+
     If the experiment tracker is enabled, the model and the training accuracy
     will be logged to the experiment tracker.
 
@@ -123,7 +122,7 @@ def decision_tree_trainer(
     Args:
         params: The hyperparameters for the model.
         train_dataset: The training dataset to train the model on.
-    
+
     Returns:
         The trained model and the training accuracy.
     """

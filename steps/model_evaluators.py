@@ -14,16 +14,14 @@
 """Model scoring and evaluation steps used to check the model performance"""
 
 from typing import List
+
 import pandas as pd
 from sklearn.base import ClassifierMixin
-
-from zenml.integrations.deepchecks.steps import (
-    DeepchecksModelValidationCheckStepParameters,
-    deepchecks_model_validation_check_step,
-)
 from zenml.integrations.deepchecks.steps import (
     DeepchecksModelDriftCheckStepParameters,
+    DeepchecksModelValidationCheckStepParameters,
     deepchecks_model_drift_check_step,
+    deepchecks_model_validation_check_step,
 )
 from zenml.steps import BaseParameters, step
 

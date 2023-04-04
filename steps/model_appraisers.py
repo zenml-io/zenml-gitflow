@@ -17,15 +17,16 @@ results, to generate human-readable reports, and to make a decision about
 serving the model."""
 
 import tempfile
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
+
+from deepchecks import SuiteResult
 from zenml.steps import BaseParameters, Output, step
+
 from utils.tracker_helper import (
     get_current_tracker_run_url,
     get_tracker_name,
     log_text,
 )
-
-from deepchecks import SuiteResult
 
 
 class ModelAppraisalStepParams(BaseParameters):
@@ -152,7 +153,9 @@ def model_analysis(
             if check not in failed_checks
         ]
         skipped_checks = suite_result.get_not_ran_checks()
-        check_passed = suite_result.passed(fail_if_warning=params.warnings_as_errors)
+        check_passed = suite_result.passed(
+            fail_if_warning=params.warnings_as_errors
+        )
         results.append(
             (
                 check_passed,

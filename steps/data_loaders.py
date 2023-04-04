@@ -14,14 +14,12 @@
 
 """Data loader steps for the Iris classification pipeline."""
 
-from enum import Enum
 from typing import Optional
+
 import pandas as pd
-from sklearn.datasets import load_breast_cancer, load_iris
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from zenml.steps import BaseParameters, Output, step
-import requests
-
 
 DATASET_TARGET_COLUMN_NAME = "target"
 
@@ -53,7 +51,7 @@ def data_loader(
     params: DataLoaderStepParameters,
 ) -> pd.DataFrame:
     """Load the dataset with the indicated version.
-    
+
     Args:
         params: Parameters for the data_loader step (data version to load).
 
@@ -90,7 +88,7 @@ class DataSplitterStepParameters(BaseParameters):
 @step
 def data_splitter(
     params: DataSplitterStepParameters,
-    dataset: pd.DataFrame, 
+    dataset: pd.DataFrame,
 ) -> Output(train=pd.DataFrame, test=pd.DataFrame,):
     """Split the dataset into train and test (validation) subsets.
 
@@ -98,7 +96,7 @@ def data_splitter(
         params: Parameters for the data_splitter step (split proportions,
             shuffling, random state).
         dataset: The dataset to split.
-    
+
     Returns:
         The train and test (validation) subsets of the dataset.
     """

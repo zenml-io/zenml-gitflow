@@ -11,7 +11,7 @@
 # and run it a second time.
 #
 scikit-learn
-mlflow>=1.24.0,<=2.2.0
+mlflow>=2.1.0,<=2.2.2
 mlserver>=0.5.3
 mlserver-mlflow>=0.5.3
 deepchecks[vision]==0.8.0

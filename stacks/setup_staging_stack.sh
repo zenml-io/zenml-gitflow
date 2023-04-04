@@ -17,6 +17,7 @@ zenml orchestrator register vertex_ai_orchestrator \
 
 zenml artifact-store register gcp_store -f gcp --path=gs://ing-store
 
+zenml model-registry register local_mlflow_registry --flavor=mlflow
 zenml image-builder register local_image_builder -f local
 zenml container-registry register gcp_registry --flavor=gcp --uri=eu.gcr.io/zenml-demos 
 
@@ -26,6 +27,7 @@ zenml stack register gcp_gitflow_stack \
     -o vertex_ai_orchestrator \
     -dv deepchecks_data_validator \
     -e gcp_mlflow_tracker \
+    -r local_mlflow_registry \
     -i local_image_builder || \
   msg "${WARNING}Reusing preexisting stack ${NOFORMAT}gcp_gitflow_stack"
 

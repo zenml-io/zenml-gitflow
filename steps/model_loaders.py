@@ -16,9 +16,11 @@
 pipeline."""
 
 from typing import List, Optional
+
 from sklearn.base import ClassifierMixin
 from zenml.environment import Environment
 from zenml.steps import BaseParameters, step
+
 from utils.model_helper import load_deployed_model, load_trained_model
 from utils.tracker_helper import get_tracker_name, log_model
 
@@ -52,7 +54,7 @@ def trained_model_loader(
     Args:
         params: The parameters of the model loader (pipeline name, step name,
             output name).
-    
+
     Returns:
         The loaded model.
 

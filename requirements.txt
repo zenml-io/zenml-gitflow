@@ -269,15 +269,15 @@ matplotlib-inline==0.1.6
     #   ipython
 mistune==2.0.4
     # via nbconvert
-mlflow==1.25.1
+mlflow==2.2.2
     # via
     #   -r requirements-local.in
     #   mlserver-mlflow
-mlserver==1.2.3
+mlserver==1.2.4
     # via
     #   -r requirements-local.in
     #   mlserver-mlflow
-mlserver-mlflow==1.2.3
+mlserver-mlflow==1.2.4
     # via -r requirements-local.in
 monotonic==1.6
     # via analytics-python

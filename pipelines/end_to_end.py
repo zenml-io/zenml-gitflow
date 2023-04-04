@@ -23,6 +23,7 @@ def gitflow_end_to_end_pipeline(
     train_test_data_drift_detector,
     model_trainer,
     model_scorer,
+    model_registrer,
     model_evaluator,
     train_test_model_evaluator,
     served_model_loader,
@@ -42,6 +43,7 @@ def gitflow_end_to_end_pipeline(
     )
     model, train_accuracy = model_trainer(train_dataset=train_dataset)
     test_accuracy = model_scorer(dataset=test_dataset, model=model)
+    model_registrer(model=model)
     served_train_accuracy = served_model_train_scorer(
         dataset=train_dataset, model=served_model
     )

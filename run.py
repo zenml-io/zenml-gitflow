@@ -15,62 +15,48 @@
 import argparse
 from enum import Enum
 from typing import Optional
-import zenml
+
 from zenml.client import Client
 from zenml.config import DockerSettings
-from zenml.config.docker_settings import PythonEnvironmentExportMethod
-
-from pipelines import (
-    gitflow_training_pipeline,
-    gitflow_end_to_end_pipeline,
+from zenml.enums import ExecutionStatus
+from zenml.integrations.deepchecks import DeepchecksIntegration
+from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
+from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
+from zenml.integrations.mlflow.steps.mlflow_registry import (
+    MLFlowRegistryParameters,
+    mlflow_register_model_step,
 )
 
+from pipelines import gitflow_end_to_end_pipeline, gitflow_training_pipeline
 from steps.data_loaders import (
     DataLoaderStepParameters,
     DataSplitterStepParameters,
     data_loader,
     data_splitter,
 )
-from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
+from steps.data_validators import data_drift_detector, data_integrity_checker
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
     model_train_appraiser,
     model_train_reference_appraiser,
 )
-from steps.model_loaders import (
-    ServedModelLoaderStepParameters,
-    TrainedModelLoaderStepParameters,
-    served_model_loader,
-    trained_model_loader,
-)
-
-from steps.model_trainers import (
-    DecisionTreeTrainerParams,
-    SVCTrainerParams,
-    decision_tree_trainer,
-    svc_trainer,
-)
-
-from steps.data_validators import (
-    data_drift_detector,
-    data_integrity_checker,
-)
 from steps.model_evaluators import (
     ModelScorerStepParams,
-    model_scorer,
     model_evaluator,
+    model_scorer,
     optional_model_scorer,
     train_test_model_evaluator,
 )
-from zenml.enums import ExecutionStatus
-from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
-from zenml.integrations.deepchecks import DeepchecksIntegration
-from utils.kubeflow_helper import get_kubeflow_settings
-from utils.report_generators import (
-    deepcheck_suite_to_pdf,
-    get_result_and_write_report,
-    get_result_and_write_report,
+from steps.model_loaders import (
+    ServedModelLoaderStepParameters,
+    served_model_loader,
 )
+from steps.model_trainers import (
+    DecisionTreeTrainerParams,
+    decision_tree_trainer,
+)
+from utils.kubeflow_helper import get_kubeflow_settings
+from utils.report_generators import get_result_and_write_report
 from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
 # These global parameters should be the same across all workflow stages.
@@ -218,6 +204,11 @@ def main(
                     accuracy_metric_name="test_accuracy",
                 )
             ),
+            model_registrer=mlflow_register_model_step(
+                params=MLFlowRegistryParameters(
+                    name="gitflow-model",
+                )
+            ),
             model_evaluator=model_evaluator,
             train_test_model_evaluator=train_test_model_evaluator,
             model_appraiser=model_train_appraiser(
@@ -340,7 +331,7 @@ def main(
         # To generate the Deepchecks reports as PDF files, uncomment the following lines:
         #
         # NOTE: you also need to install `wkhtmltopdf` on your machine for this
-        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`). 
+        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`).
         #
         # deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
         # deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")

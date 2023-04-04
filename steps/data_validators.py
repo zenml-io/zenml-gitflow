@@ -16,8 +16,8 @@ the training and validation data have the same distribution."""
 
 from zenml.integrations.deepchecks.steps import (
     DeepchecksDataDriftCheckStepParameters,
-    deepchecks_data_drift_check_step,
     DeepchecksDataIntegrityCheckStepParameters,
+    deepchecks_data_drift_check_step,
     deepchecks_data_integrity_check_step,
 )
 from zenml.integrations.deepchecks.validation_checks import (
@@ -45,7 +45,7 @@ data_drift_detector = deepchecks_data_drift_check_step(
         check_kwargs={
             DeepchecksDataDriftCheck.TABULAR_FEATURE_LABEL_CORRELATION_CHANGE: dict(
                 condition_feature_pps_in_train_less_than=dict(
-                    threshold=1., # essentially turns off the label correlation check
+                    threshold=1.0,  # essentially turns off the label correlation check
                 ),
             )
         },
