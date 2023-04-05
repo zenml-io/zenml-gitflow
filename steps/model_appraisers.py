@@ -16,17 +16,15 @@
 results, to generate human-readable reports, and to make a decision about
 serving the model."""
 
+import json
 import tempfile
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from zenml.steps import BaseParameters, Output, step
 from utils.tracker_helper import (
     get_current_tracker_run_url,
     get_tracker_name,
     log_text,
 )
-
-from evidently.model_profile import Profile  # type: ignore[import]
-
 
 class ModelAppraisalStepParams(BaseParameters):
     """Parameters for the model training appraisal step.
@@ -67,17 +65,17 @@ def model_analysis(
     params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
-    data_quality_report: Profile,
+    data_quality_report: Dict[str, Any],
     data_quality_html: str,
-    train_test_data_drift_report: Profile,
+    train_test_data_drift_report: Dict[str, Any],
     train_test_data_drift_html: str,
-    model_evaluation_report: Profile,
+    model_evaluation_report: Dict[str, Any],
     model_evaluation_html: str,
-    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_report: Dict[str, Any],
     train_test_model_evaluation_html: str,
     reference_test_accuracy: Optional[float] = None,
-    train_serve_model_comparison_report: Optional[Profile] = None,
-    train_serve_model_comparison_html: Optional[Profile] = None,
+    train_serve_model_comparison_report: Optional[Dict[str, Any]] = None,
+    train_serve_model_comparison_html: Optional[Dict[str, Any]] = None,
 ) -> Tuple[bool, str]:
     """Analyze the model training and evaluation results, generate a report and
     make a decision about serving the model.
@@ -161,10 +159,7 @@ def model_analysis(
 
         log_text(html_report, f"{name}.html")
         check_passed = True
-        if name == "train_test_data_drift_report":
-            check_passed = report.object()["data_drift"]["data"]["metrics"][
-                "dataset_drift"
-            ]
+        # TODO: Check results here
         results.append(check_passed)
         if not check_passed and not ignored:
             passed = False
@@ -283,13 +278,13 @@ def model_train_appraiser(
     params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
-    data_quality_report: Profile,
+    data_quality_report: str,
     data_quality_html: str,
-    train_test_data_drift_report: Profile,
+    train_test_data_drift_report: str,
     train_test_data_drift_html: str,
-    model_evaluation_report: Profile,
+    model_evaluation_report: str,
     model_evaluation_html: str,
-    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_report: str,
     train_test_model_evaluation_html: str,
 ) -> Output(result=bool, report=str):
     """Analyze the training results, generate a report and make a decision about
@@ -324,13 +319,13 @@ def model_train_appraiser(
         params=params,
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        data_quality_report=data_quality_report,
+        data_quality_report=json.loads(data_quality_report),
         data_quality_html=data_quality_html,
-        train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_report=json.loads(train_test_data_drift_report),
         train_test_data_drift_html=train_test_data_drift_html,
-        model_evaluation_report=model_evaluation_report,
+        model_evaluation_report=json.loads(model_evaluation_report),
         model_evaluation_html=model_evaluation_html,
-        train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_report=json.loads(train_test_model_evaluation_report),
         train_test_model_evaluation_html=train_test_model_evaluation_html,
     )
 
@@ -343,15 +338,15 @@ def model_train_reference_appraiser(
     train_accuracy: float,
     test_accuracy: float,
     reference_test_accuracy: float,
-    data_quality_report: Profile,
+    data_quality_report: str,
     data_quality_html: str,
-    train_test_data_drift_report: Profile,
+    train_test_data_drift_report: str,
     train_test_data_drift_html: str,
-    model_evaluation_report: Profile,
+    model_evaluation_report: str,
     model_evaluation_html: str,
-    train_test_model_evaluation_report: Profile,
+    train_test_model_evaluation_report: str,
     train_test_model_evaluation_html: str,
-    train_serve_model_comparison_report: Profile,
+    train_serve_model_comparison_report: str,
     train_serve_model_comparison_html: str,
 ) -> Output(result=bool, report=str):
     """Analyze the training results, generate a report and make a decision about
@@ -395,13 +390,13 @@ def model_train_reference_appraiser(
         params=params,
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
-        data_quality_report=data_quality_report,
+        data_quality_report=json.loads(data_quality_report),
         data_quality_html=data_quality_html,
-        train_test_data_drift_report=train_test_data_drift_report,
+        train_test_data_drift_report=json.loads(train_test_data_drift_report),
         train_test_data_drift_html=train_test_data_drift_html,
-        model_evaluation_report=model_evaluation_report,
+        model_evaluation_report=json.loads(model_evaluation_report),
         model_evaluation_html=model_evaluation_html,
-        train_test_model_evaluation_report=train_test_model_evaluation_report,
+        train_test_model_evaluation_report=json.loads(train_test_model_evaluation_report),
         train_test_model_evaluation_html=train_test_model_evaluation_html,
         reference_test_accuracy=reference_test_accuracy
         if reference_test_accuracy

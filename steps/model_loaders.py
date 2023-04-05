@@ -110,7 +110,6 @@ def served_model_loader(
     """
     model_server, model = load_deployed_model(
         model_name=params.model_name,
-        step_name=params.step_name,
     )
     if model:
         return [model]

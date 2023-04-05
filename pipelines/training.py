@@ -31,7 +31,7 @@ def devweek_training_pipeline(
     """Pipeline that trains and evaluates a new model."""
     data = importer()
     data_quality_report, data_quality_html = data_quality_profiler(
-        dataset=data,
+        reference_dataset=data, comparison_dataset=data,
     )
     train_dataset, test_dataset = data_splitter(data)
 
@@ -59,7 +59,8 @@ def devweek_training_pipeline(
     )
 
     model_evaluation_report, model_evaluation_html = model_evaluator(
-        dataset=test_dataset_with_predictions,
+        reference_dataset=test_dataset_with_predictions,
+        comparison_dataset=test_dataset_with_predictions,
     )
     model_appraiser(
         train_accuracy=train_accuracy,

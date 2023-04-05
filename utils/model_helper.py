@@ -25,14 +25,11 @@ from zenml.post_execution import get_pipeline, StepView
 
 def load_deployed_model(
     model_name: str,
-    step_name: str,
 ) -> Tuple[Optional[BaseService], Optional[ClassifierMixin]]:
     """Load and return the model with the given name being currently served.
 
     Args:
         model_name: The name of the model to load.
-        step_name: The name of the pipeline step that was used to deploy the
-            model.
     
     Returns:
         A tuple containing the model deployment service and the loaded model.
@@ -51,9 +48,7 @@ def load_deployed_model(
 
     pipeline_name = model_servers[0].config.pipeline_name
     pipeline_run_id = model_servers[0].config.pipeline_run_id
-    # NOTE: this is not accurate as it points to the step function name instead
-    # of the pipeline step name. This is a bug in the model deployer.
-    # step_name = models[0].config.pipeline_step_name
+    step_name = model_servers[0].config.pipeline_step_name
 
     try:
         pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_run_id)

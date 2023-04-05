@@ -16,40 +16,42 @@ the training and validation data have the same distribution."""
 
 from zenml.integrations.evidently.steps import (
     EvidentlyColumnMapping,
-    EvidentlyProfileParameters,
-    evidently_profile_step,
+    EvidentlyReportParameters,
+    evidently_report_step,
 )
-from steps.evidently import CustomEvidentlyProfileStep
+from zenml.integrations.evidently.metrics import EvidentlyMetricConfig
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 
-# Evidently data quality profiler step
-data_quality_profiler = CustomEvidentlyProfileStep(
-    name="data_quality_profiler",
-    params=EvidentlyProfileParameters(
+# Evidently data quality report step
+data_quality_profiler = evidently_report_step(
+    step_name="data_quality_profiler",
+    # single_dataset=True,
+    params=EvidentlyReportParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,
             prediction=DATASET_TARGET_COLUMN_NAME,
         ),
-        profile_sections=[
-            "dataquality",
+        metrics=[
+            EvidentlyMetricConfig.metric("DatasetSummaryMetric"),
+            #generate_column_metrics(ColumnSummaryMetric, columns=self.columns, skip_id_column=True),
+            EvidentlyMetricConfig.metric("DatasetMissingValuesMetric"),
+            #EvidentlyMetricConfig.metric("DatasetCorrelationsMetric"),
         ],
-        verbose_level=1,
     ),
 )
 
 # Evidently train-test data similarity check step
-data_drift_detector = evidently_profile_step(
+data_drift_detector = evidently_report_step(
     step_name="data_drift_detector",
-    params=EvidentlyProfileParameters(
+    params=EvidentlyReportParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,
             prediction=DATASET_TARGET_COLUMN_NAME,
         ),
-        profile_sections=[
-            "categoricaltargetdrift",
-            "datadrift",
+        metrics=[
+            EvidentlyMetricConfig.metric("DataDriftPreset"),
+            EvidentlyMetricConfig.metric("TargetDriftPreset"),
         ],
-        verbose_level=1,
     ),
 )

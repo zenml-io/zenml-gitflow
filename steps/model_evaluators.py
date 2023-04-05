@@ -21,9 +21,10 @@ from sklearn.metrics import accuracy_score
 
 from zenml.integrations.evidently.steps import (
     EvidentlyColumnMapping,
-    EvidentlyProfileParameters,
-    evidently_profile_step,
+    EvidentlyReportParameters,
+    evidently_report_step,
 )
+from zenml.integrations.evidently.metrics import EvidentlyMetricConfig
 
 from zenml.steps import BaseParameters, Output, step
 
@@ -32,7 +33,6 @@ from steps.data_loaders import (
     DATASET_TARGET_COLUMN_NAME,
 )
 from utils.tracker_helper import get_tracker_name, log_metric
-from steps.evidently import CustomEvidentlyProfileStep
 
 
 class ModelScorerStepParams(BaseParameters):
@@ -139,47 +139,54 @@ def optional_model_scorer(
 
 
 # Evidently train-test model evaluation step.
-train_test_model_evaluator = evidently_profile_step(
+train_test_model_evaluator = evidently_report_step(
     step_name="train_test_model_evaluator",
-    params=EvidentlyProfileParameters(
+    params=EvidentlyReportParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,
             prediction=DATASET_PREDICTION_COLUMN_NAME,
         ),
-        profile_sections=[
-            "classificationmodelperformance",
+        metrics=[
+            # EvidentlyMetricConfig.metric("ClassificationQualityMetric"),
+            EvidentlyMetricConfig.metric("ClassificationClassBalance"),
+            EvidentlyMetricConfig.metric("ClassificationConfusionMatrix"),
+            EvidentlyMetricConfig.metric("ClassificationQualityByClass"),
         ],
-        verbose_level=1,
     ),
 )
 
 
 # Evidently train-serve model comparison step.
-train_serve_model_comparison = evidently_profile_step(
+train_serve_model_comparison = evidently_report_step(
     step_name="train_serve_model_comparison",
-    params=EvidentlyProfileParameters(
+    params=EvidentlyReportParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,
             prediction=DATASET_PREDICTION_COLUMN_NAME,
         ),
-        profile_sections=[
-            "classificationmodelperformance",
+        metrics=[
+            # EvidentlyMetricConfig.metric("ClassificationQualityMetric"),
+            EvidentlyMetricConfig.metric("ClassificationClassBalance"),
+            EvidentlyMetricConfig.metric("ClassificationConfusionMatrix"),
+            EvidentlyMetricConfig.metric("ClassificationQualityByClass"),
         ],
-        verbose_level=1,
     ),
 )
 
 # Evidently single dataset model evaluation step.
-model_evaluator = CustomEvidentlyProfileStep(
-    name="model_evaluator",
-    params=EvidentlyProfileParameters(
+model_evaluator = evidently_report_step(
+    step_name="model_evaluator",
+    # single_dataset=True,
+    params=EvidentlyReportParameters(
         column_mapping=EvidentlyColumnMapping(
             target=DATASET_TARGET_COLUMN_NAME,
             prediction=DATASET_PREDICTION_COLUMN_NAME,
         ),
-        profile_sections=[
-            "classificationmodelperformance",
+        metrics=[
+            # EvidentlyMetricConfig.metric("ClassificationQualityMetric"),
+            EvidentlyMetricConfig.metric("ClassificationClassBalance"),
+            EvidentlyMetricConfig.metric("ClassificationConfusionMatrix"),
+            EvidentlyMetricConfig.metric("ClassificationQualityByClass"),
         ],
-        verbose_level=1,
     ),
 )
