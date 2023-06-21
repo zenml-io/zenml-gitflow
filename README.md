@@ -440,24 +440,24 @@ repository in your GitHub account that is a copy of this one.
 You'll need to set up a few more things to connect your new repository to a
 ZenML server and a cloud stack:
 
-* [deploy a ZenML server using a method of your choice](https://docs.zenml.io/getting-started/deploying-zenml)
+* [deploy a ZenML server using a method of your choice](https://docs.zenml.io/platform-guide/set-up-your-mlops-platform/deploy-zenml)
 somewhere where the GitHub Actions workflows can access it (e.g. in the cloud, on a server or local
 machine with a public IP, etc.)
 * set up the resources needed by the ZenML stacks that you'll be using for the
 staging and production workflows. You can use one of the
-[ZenML MLOps recipes](https://docs.zenml.io/advanced-guide/practical-mlops/stack-recipes)
+[ZenML MLOps recipes](https://docs.zenml.io/platform-guide/set-up-your-mlops-platform/deploy-and-set-up-a-cloud-stack/deploy-a-stack-using-stack-recipes)
 to speed this up. You'll need the following components to be part of your stack:
-  * a remote [ZenML artifact store](https://docs.zenml.io/component-gallery/artifact-stores) (e.g. GCS, S3, etc.)
-  * a remote [ZenML orchestrator](https://docs.zenml.io/component-gallery/orchestrators) (e.g. Kubeflow, Airflow, Vertex AI or a basic Kubernetes orchestrator)
-  * (optional) a remote [MLFlow experiment tracker](https://docs.zenml.io/component-gallery/experiment-trackers/mlflow).
+  * a remote [ZenML artifact store](https://docs.zenml.io/user-guide/component-guide/artifact-stores) (e.g. GCS, S3, etc.)
+  * a remote [ZenML orchestrator](https://docs.zenml.io/user-guide/component-guide/orchestrators) (e.g. Kubeflow, Airflow, Vertex AI or a basic Kubernetes orchestrator)
+  * (optional) a remote [MLFlow experiment tracker](https://docs.zenml.io/user-guide/component-guide/experiment-trackers).
   Alternatively, you can use a different experiment tracker if you make changes
   to the code to use it instead of MLFlow.
-  * a Kubernetes cluster with the [KServe model deployer](https://docs.zenml.io/component-gallery/model-deployers/kserve)
+  * a Kubernetes cluster with the [KServe model deployer](https://docs.zenml.io/user-guide/component-guide/model-deployers)
   installed. NOTE: due to a current ZenML limitation, KServe needs to be
   installed in the same Kubernetes cluster as the orchestrator. Alternatively,
   you can use a different model deployer if you make changes to the code to use
   a different model deployment step.
-  * (optional) [a secrets manager](https://docs.zenml.io/component-gallery/secrets-managers)
+  * (optional) [a secrets manager](https://docs.zenml.io/user-guide/component-guide/secrets-managers)
   is recommended to store the credentials for the other stack components. The
   secrets manager service also needs to be accessible from the runtime used
   to run pipelines.
