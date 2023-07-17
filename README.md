@@ -1,3 +1,10 @@
+# IMPORTANT NOTE: THIS REPOSITORY IS GOING TO BE DEPRECATED AFTER 01/08/2023. 
+***Please consider the impact it might have on your ongoing work and plan accordingly.***
+
+We are working hard to provide best onboarding experience to you. To support that ultimate goal we are reshaping `examples` of core ZenML package!
+
+More technical details about this will follow shortly.
+
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=fe9bfd0e-c7df-4d21-bc4c-cc7772f11079" />
 
 # ZenML - GitHub Action Workflow
