@@ -53,6 +53,8 @@ def main(
     ignore_checks: bool = False,
     model_name: str = "model",
     dataset_version: Optional[str] = None,
+    version=None,
+    github_pr_url=None,
 ):
     """Main runner for all pipelines.
 
@@ -70,7 +72,7 @@ def main(
     pipeline_args = {}
     if disable_caching:
         pipeline_args["enable_cache"] = False
-    pipeline_args["model"] = Model(name=MODEL_NAME)
+    pipeline_args["model"] = Model(name=MODEL_NAME, version=version)
 
     docker_settings = DockerSettings(
         install_stack_requirements=False,
@@ -98,6 +100,7 @@ def main(
         ignore_model_evaluation_failures=ignore_checks,
         ignore_reference_model=ignore_checks,
         max_depth=5,
+        github_pr_url=github_pr_url,
     )
 
     if pipeline_name == Pipeline.TRAIN:
@@ -193,6 +196,22 @@ if __name__ == "__main__":
         action="store_true",
         required=False,
     )
+    parser.add_argument(
+        "-gp",
+        "--github-pr-url",
+        default=None,
+        help="GitHub PR URL",
+        type=str,
+        required=False,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        default=None,
+        help="Model Version to create.",
+        type=str,
+        required=False,
+    )
     args = parser.parse_args()
 
     assert args.pipeline in [
@@ -207,4 +226,6 @@ if __name__ == "__main__":
         ignore_checks=args.ignore_checks,
         model_name=args.model,
         dataset_version=args.dataset,
+        version=args.version,
+        github_pr_url=args.github_pr_url,
     )

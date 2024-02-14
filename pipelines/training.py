@@ -22,6 +22,7 @@ from steps import (
     data_loader,
     data_splitter,
     decision_tree_trainer,
+    metadata_logger,
     model_evaluator,
     model_scorer,
     model_train_appraiser,
@@ -47,8 +48,10 @@ def gitflow_training_pipeline(
     ignore_reference_model: bool = False,
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
+    github_pr_url: Optional[str] = None,
 ):
     """Pipeline that trains and evaluates a new model."""
+    metadata_logger(github_pr_url=github_pr_url)
     data = data_loader(version=dataset_version)
     data_integrity_report = data_integrity_checker(dataset=data)
     train_dataset, test_dataset = data_splitter(

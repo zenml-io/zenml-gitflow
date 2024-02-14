@@ -16,6 +16,8 @@ jobs:
       ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
       ZENML_STAGING_STACK: ${{ secrets.ZENML_STAGING_STACK }}
       ZENML_PRODUCTION_STACK: ${{ secrets.ZENML_PRODUCTION_STACK }}
+      ZENML_GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+      ZENML_GITHUB_URL_PR: ${{ github.event.pull_request._links.html.href }}
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
@@ -60,14 +62,19 @@ jobs:
         run: |
           python run.py \
             --pipeline train \
-            --dataset staging
+            --dataset staging \
+            --version ${{ env.ZENML_GITHUB_SHA }} \
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }}
+
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
         run: |
           python run.py \
             --pipeline end-to-end \
-            --dataset production
+            --dataset production \
+            --version ${{ env.ZENML_GITHUB_SHA }} \
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }}
 
       - name: Read training report
         id: report

@@ -22,6 +22,7 @@ from steps import (
     data_loader,
     data_splitter,
     decision_tree_trainer,
+    metadata_logger,
     model_evaluator,
     model_scorer,
     model_train_reference_appraiser,
@@ -51,9 +52,11 @@ def gitflow_end_to_end_pipeline(
     ignore_reference_model: bool = False,
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
+    github_pr_url: Optional[str] = None,
 ):
     """Train and serve a new model if it performs better than the model
     currently served."""
+    metadata_logger(github_pr_url=github_pr_url)
 
     data = data_loader(version=dataset_version)
     served_model = served_model_loader(

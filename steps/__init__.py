@@ -14,6 +14,7 @@
 
 from .data_loaders import data_loader, data_splitter
 from .data_validators import data_drift_detector, data_integrity_checker
+from .metadata_logger import metadata_logger
 from .model_appraisers import (
     model_train_appraiser,
     model_train_reference_appraiser,
