@@ -41,19 +41,7 @@ jobs:
         if: ${{ github.base_ref == 'staging' }}
         run: |
           gcloud auth configure-docker --project zenml-demos
-      
-      - name: Login to Amazon ECR
-        if: ${{ github.base_ref == 'main' }}
-        id: login-ecr
-        run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
-  
-      - name: Login to Amazon EKS
-        if: ${{ github.base_ref == 'main' }}
-        id: login-eks
-        run: |
-          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias zenml-eks
-        
+            
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
