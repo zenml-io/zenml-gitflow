@@ -11,8 +11,6 @@ jobs:
   run-staging-workflow:
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       ZENML_HOST: ${{ secrets.ZENML_HOST }}
       ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
@@ -25,13 +23,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        if: ${{ github.base_ref == 'main' }}
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
-          aws-region: eu-central-1
       
       - name: Configure GCP
         if: ${{ github.base_ref == 'staging' }}
