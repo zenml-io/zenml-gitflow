@@ -132,3 +132,4 @@ dmypy.json
 mlruns
 
 poetry.lock
+model_train_results.md

@@ -1,0 +1,123 @@
+name: PR Flow
+on:
+  pull_request:
+    branches: [staging, main]
+concurrency:
+  # New commit on branch cancels running workflows of the same branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+    
+jobs:
+  run-staging-workflow:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      ZENML_HOST: ${{ secrets.ZENML_HOST }}
+      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
+      ZENML_STAGING_STACK: ${{ secrets.ZENML_STAGING_STACK }}
+      ZENML_PRODUCTION_STACK: ${{ secrets.ZENML_PRODUCTION_STACK }}
+      ZENML_DEBUG: true
+      ZENML_ANALYTICS_OPT_IN: false
+      ZENML_LOGGING_VERBOSITY: INFO
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        if: ${{ github.base_ref == 'main' }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::715803424590:role/OrganizationAccountRestrictedAccessRole
+          aws-region: eu-central-1
+      
+      - name: Configure GCP
+        if: ${{ github.base_ref == 'staging' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: 'Set up Cloud SDK'
+        if: ${{ github.base_ref == 'staging' }}
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - id: install-kubectl
+        uses: azure/setup-kubectl@v3
+ 
+      - name: Authenticate docker
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          gcloud auth configure-docker --project zenml-demos
+      
+      - name: Login to Amazon ECR
+        if: ${{ github.base_ref == 'main' }}
+        id: login-ecr
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 715803424590.dkr.ecr.us-east-1.amazonaws.com
+  
+      - name: Login to Amazon EKS
+        if: ${{ github.base_ref == 'main' }}
+        id: login-eks
+        run: |
+          aws eks --region eu-central-1 update-kubeconfig --name kubeflowmultitenant --alias zenml-eks
+        
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install requirements
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          make install-gcp
+      
+      - name: Install requirements
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          make install-aws
+
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install wkhtmltopdf
+
+      - name: Connect to ZenML server
+        run: |
+          zenml connect --url $ZENML_HOST --api-key $ZENML_API_KEY
+
+      - name: Set stack (Staging)
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          zenml stack set ${{ env.ZENML_STAGING_STACK }}
+
+      - name: Set stack (Production)
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          zenml stack set ${{ env.ZENML_PRODUCTION_STACK }}
+
+      - name: Run pipeline (Staging)
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          python run.py \
+            --pipeline train \
+            --dataset staging
+
+      - name: Run pipeline (Production)
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          python run.py \
+            --pipeline end-to-end \
+            --dataset production
+
+      - name: Read training report
+        id: report
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./model_train_results.md
+
+      - name: PR comment with training report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: ./model_train_results.md
+          comment_tag: training_report
+          mode: recreate
+          create_if_not_exists: true

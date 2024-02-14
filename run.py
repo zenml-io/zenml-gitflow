@@ -23,6 +23,16 @@ from zenml.integrations.deepchecks import DeepchecksIntegration
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.utils.enum_utils import StrEnum
 
+from configs.global_conf import (
+    MAX_SERVE_TEST_ACCURACY_DIFF,
+    MAX_SERVE_TRAIN_ACCURACY_DIFF,
+    MIN_TEST_ACCURACY,
+    MIN_TRAIN_ACCURACY,
+    MODEL_NAME,
+    RANDOM_STATE,
+    TRAIN_TEST_SPLIT,
+    WARNINGS_AS_ERRORS,
+)
 from pipelines import gitflow_end_to_end_pipeline, gitflow_training_pipeline
 from utils.kubeflow_helper import get_kubeflow_settings
 from utils.report_generators import get_result_and_write_report
@@ -30,17 +40,6 @@ from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
 if TYPE_CHECKING:
     from zenml.models import PipelineRunResponse
-
-
-# These global parameters should be the same across all workflow stages.
-RANDOM_STATE = 23
-TRAIN_TEST_SPLIT = 0.2
-MIN_TRAIN_ACCURACY = 0.9
-MIN_TEST_ACCURACY = 0.9
-MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
-MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
-WARNINGS_AS_ERRORS = False
-MODEL_NAME = "gitflow_model"
 
 
 class Pipeline(StrEnum):
