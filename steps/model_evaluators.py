@@ -18,11 +18,9 @@ import pandas as pd
 from sklearn.base import ClassifierMixin
 
 from zenml.integrations.deepchecks.steps import (
-    DeepchecksModelValidationCheckStepParameters,
     deepchecks_model_validation_check_step,
 )
 from zenml.integrations.deepchecks.steps import (
-    DeepchecksModelDriftCheckStepParameters,
     deepchecks_model_drift_check_step,
 )
 from zenml.steps import BaseParameters
@@ -30,6 +28,7 @@ from zenml import step
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import get_tracker_name, log_metric
+from functools import partial
 
 
 class ModelScorerStepParams(BaseParameters):
@@ -125,17 +124,15 @@ def optional_model_scorer(
 
 
 # Deepchecks train-test model evaluation step.
-train_test_model_evaluator = deepchecks_model_drift_check_step(
-    step_name="train_test_model_evaluator",
-    params=DeepchecksModelDriftCheckStepParameters(
-        dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
-    ),
+train_test_model_evaluator = partial(
+    deepchecks_model_drift_check_step,
+    id="train_test_model_evaluator",
+    dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
 )
 
 # Deepchecks model evaluation step.
-model_evaluator = deepchecks_model_validation_check_step(
-    step_name="model_evaluator",
-    params=DeepchecksModelValidationCheckStepParameters(
-        dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
-    ),
+model_evaluator = partial(
+    deepchecks_model_validation_check_step,
+    id="model_evaluator",
+    dataset_kwargs=dict(label=DATASET_TARGET_COLUMN_NAME, cat_features=[]),
 )

@@ -13,7 +13,6 @@
 #  permissions and limitations under the License.
 
 from zenml import pipeline
-from zenml.client import Client
 from steps.model_trainers import (
     decision_tree_trainer,
     DecisionTreeTrainerParams,

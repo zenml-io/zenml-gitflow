@@ -27,7 +27,6 @@ from steps.data_loaders import (
     DataLoaderStepParameters,
     DataSplitterStepParameters,
 )
-from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
 )
@@ -200,27 +199,6 @@ def main(
             f"    mlflow ui --backend-store-uri {get_tracking_uri()} -p {LOCAL_MLFLOW_UI_PORT}\n"
             "to be able inspect your experiment runs within the mlflow UI.\n"
         )
-    else:
-        # If no tracker is used, open the reports in the browser
-        DeepchecksVisualizer().visualize(data_integrity_step)
-        DeepchecksVisualizer().visualize(data_drift_step)
-        DeepchecksVisualizer().visualize(model_evaluator_step)
-        DeepchecksVisualizer().visualize(train_test_model_evaluator_step)
-
-        # To generate the Deepchecks reports as PDF files, uncomment the following lines:
-        #
-        # NOTE: you also need to install `wkhtmltopdf` on your machine for this
-        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`).
-        #
-        # deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
-        # deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")
-        # deepcheck_suite_to_pdf(
-        #     model_evaluator_step, "model_evaluator_report.pdf"
-        # )
-        # deepcheck_suite_to_pdf(
-        #     train_test_model_evaluator_step,
-        #     "train_test_model_evaluator_report.pdf",
-        # )
 
 
 if __name__ == "__main__":
