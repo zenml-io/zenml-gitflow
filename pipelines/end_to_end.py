@@ -13,31 +13,23 @@
 #  permissions and limitations under the License.
 
 from typing import Optional
+
 from zenml import pipeline
-from steps.model_trainers import (
-    decision_tree_trainer,
-)
-from steps.data_loaders import (
-    data_loader,
-    data_splitter,
-)
-from steps.data_validators import (
+
+from steps import (
     data_drift_detector,
     data_integrity_checker,
-)
-from steps.model_evaluators import (
-    train_test_model_evaluator,
-    model_scorer,
+    data_loader,
+    data_splitter,
+    decision_tree_trainer,
     model_evaluator,
-    optional_model_scorer,
-)
-from steps.model_appraisers import (
+    model_scorer,
     model_train_reference_appraiser,
+    optional_model_scorer,
+    served_model_loader,
+    train_test_model_evaluator,
 )
 from utils import get_stack_deployer
-from steps.model_loaders import (
-    served_model_loader,
-)
 
 
 @pipeline

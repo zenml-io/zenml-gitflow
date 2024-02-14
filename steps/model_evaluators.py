@@ -13,21 +13,19 @@
 
 """Model scoring and evaluation steps used to check the model performance"""
 
+from functools import partial
 from typing import List
+
 import pandas as pd
 from sklearn.base import ClassifierMixin
-
-from zenml.integrations.deepchecks.steps import (
-    deepchecks_model_validation_check_step,
-)
+from zenml import get_step_context, log_artifact_metadata, step
 from zenml.integrations.deepchecks.steps import (
     deepchecks_model_drift_check_step,
+    deepchecks_model_validation_check_step,
 )
-from zenml import step, log_artifact_metadata, get_step_context
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import get_tracker_name, log_metric
-from functools import partial
 
 
 def score_model(

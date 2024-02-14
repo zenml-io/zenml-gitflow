@@ -13,25 +13,20 @@
 #  permissions and limitations under the License.
 
 import argparse
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from zenml import Model
 from zenml.client import Client
 from zenml.config import DockerSettings
-from zenml import Model
-
-from pipelines import (
-    gitflow_training_pipeline,
-    gitflow_end_to_end_pipeline,
-)
 from zenml.enums import ExecutionStatus
-from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.integrations.deepchecks import DeepchecksIntegration
-from utils.kubeflow_helper import get_kubeflow_settings
-from utils.report_generators import (
-    get_result_and_write_report,
-    get_result_and_write_report,
-)
-from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
+from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.utils.enum_utils import StrEnum
+
+from pipelines import gitflow_end_to_end_pipeline, gitflow_training_pipeline
+from utils.kubeflow_helper import get_kubeflow_settings
+from utils.report_generators import get_result_and_write_report
+from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
 
 if TYPE_CHECKING:
     from zenml.models import PipelineRunResponse
@@ -46,6 +41,7 @@ MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
 MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
 WARNINGS_AS_ERRORS = False
 MODEL_NAME = "gitflow_model"
+
 
 class Pipeline(StrEnum):
     TRAIN = "train"
@@ -106,13 +102,11 @@ def main(
     )
 
     if pipeline_name == Pipeline.TRAIN:
-
         run_info: PipelineRunResponse = gitflow_training_pipeline.with_options(
             settings=settings, **pipeline_args
         )(**common_params)
 
     elif pipeline_name == Pipeline.END_TO_END:
-
         run_info: (
             PipelineRunResponse
         ) = gitflow_end_to_end_pipeline.with_options(

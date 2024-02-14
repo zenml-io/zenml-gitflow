@@ -18,15 +18,16 @@ serving the model."""
 
 import tempfile
 from typing import List, Optional, Tuple
-from zenml import step
+
+from deepchecks import SuiteResult
 from typing_extensions import Annotated
+from zenml import step
+
 from utils.tracker_helper import (
     get_current_tracker_run_url,
     get_tracker_name,
     log_text,
 )
-
-from deepchecks import SuiteResult
 
 
 def model_analysis(
@@ -247,7 +248,6 @@ Results: {'**PASSED**' if results[3][0] else '**FAILED**'}
         reference_train_accuracy is not None
         and reference_test_accuracy is not None
     ):
-
         if not ignore_reference_model:
             if (
                 reference_train_accuracy - train_accuracy

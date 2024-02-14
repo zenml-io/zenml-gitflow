@@ -16,9 +16,11 @@
 pipeline."""
 
 from typing import List, Optional
+
 from sklearn.base import ClassifierMixin
-from zenml.environment import Environment
 from zenml import step
+from zenml.environment import Environment
+
 from utils.model_helper import load_deployed_model, load_trained_model
 from utils.tracker_helper import get_tracker_name, log_model
 

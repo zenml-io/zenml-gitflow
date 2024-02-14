@@ -14,14 +14,15 @@
 
 """Model training steps used to train a model on the training data."""
 
+from typing import Tuple
+
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.steps import BaseParameters
-from zenml import step, ArtifactConfig, log_artifact_metadata
-from typing_extensions import Annotated
-from typing import Tuple
 from sklearn.tree import DecisionTreeClassifier
+from typing_extensions import Annotated
+from zenml import ArtifactConfig, log_artifact_metadata, step
+from zenml.steps import BaseParameters
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import enable_autolog, get_tracker_name
