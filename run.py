@@ -69,7 +69,6 @@ def main(
     pipeline_name: Pipeline = Pipeline.TRAIN,
     disable_caching: bool = False,
     ignore_checks: bool = False,
-    requirements_file: str = "requirements.txt",
     model_name: str = "model",
     dataset_version: Optional[str] = None,
 ):
@@ -79,8 +78,6 @@ def main(
         pipeline: One of "train", "pre-deploy", and "end-to-end".
         disable_caching: Whether to disable caching. Defaults to False.
         ignore_checks: Whether to ignore model appraisal checks. Defaults to False.
-        requirements_file: The requirements file to use to ensure reproducibility.
-            Defaults to "requirements.txt".
         model_name: The name to use for the trained/deployed model. Defaults to
             "model".
         dataset_version: The dataset version to use to train the model. If not
@@ -94,7 +91,6 @@ def main(
 
     docker_settings = DockerSettings(
         install_stack_requirements=False,
-        requirements=requirements_file,
         apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
@@ -256,15 +252,6 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "-r",
-        "--requirements",
-        default="requirements.txt",
-        help="Path to file with frozen python requirements needed to run the "
-        "pipelines on the active stack. Defaults to `requirements.txt`",
-        type=str,
-        required=False,
-    )
-    parser.add_argument(
         "-dc",
         "--disable-caching",
         default=False,
@@ -292,7 +279,6 @@ if __name__ == "__main__":
         pipeline_name=Pipeline(args.pipeline),
         disable_caching=args.disable_caching,
         ignore_checks=args.ignore_checks,
-        requirements_file=args.requirements,
         model_name=args.model,
         dataset_version=args.dataset,
     )
