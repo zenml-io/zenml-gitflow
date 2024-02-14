@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ pipeline."""
 from typing import List, Optional
 from sklearn.base import ClassifierMixin
 from zenml.environment import Environment
-from zenml.steps import BaseParameters, step
+from zenml.steps import BaseParameters
+from zenml import step
 from utils.model_helper import load_deployed_model, load_trained_model
 from utils.tracker_helper import get_tracker_name, log_model
 

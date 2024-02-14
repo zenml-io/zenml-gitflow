@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at:
@@ -25,7 +25,8 @@ from zenml.integrations.deepchecks.steps import (
     DeepchecksModelDriftCheckStepParameters,
     deepchecks_model_drift_check_step,
 )
-from zenml.steps import BaseParameters, step
+from zenml.steps import BaseParameters
+from zenml import step
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import get_tracker_name, log_metric

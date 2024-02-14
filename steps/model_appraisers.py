@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ results, to generate human-readable reports, and to make a decision about
 serving the model."""
 
 import tempfile
-from typing import List, Optional, Tuple, Union
-from zenml.steps import BaseParameters, Output, step
+from typing import List, Optional, Tuple
+from zenml.steps import BaseParameters
+from zenml import step
+from typing_extensions import Annotated
 from utils.tracker_helper import (
     get_current_tracker_run_url,
     get_tracker_name,
@@ -317,7 +319,7 @@ def model_train_appraiser(
     train_test_data_drift_report: SuiteResult,
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
-) -> Output(result=bool, report=str):
+) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
 
@@ -371,7 +373,7 @@ def model_train_reference_appraiser(
     train_test_data_drift_report: SuiteResult,
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
-) -> Output(result=bool, report=str):
+) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
 

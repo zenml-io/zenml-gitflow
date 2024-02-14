@@ -703,7 +703,7 @@ widgetsnbextension==3.6.1
     # via ipywidgets
 yarl==1.8.2
     # via aiohttp
-zenml==0.35.1
+zenml>=0.55.2
     # via -r requirements-base.in
 zipp==3.11.0
     # via

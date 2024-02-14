@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.client import Client
-from zenml.steps import BaseParameters, Output, step
+from zenml.steps import BaseParameters
+from zenml import step
+from typing_extensions import Annotated
+from typing import Tuple
 from sklearn.tree import DecisionTreeClassifier
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
@@ -57,7 +59,7 @@ class SVCTrainerParams(BaseParameters):
 def svc_trainer(
     params: SVCTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+) -> Tuple[Annotated[ClassifierMixin,"model"], Annotated[float,"accuracy"]]:
     """Train and logs a sklearn C-support vector classification model.
     
     If the experiment tracker is enabled, the model and the training accuracy
@@ -114,7 +116,7 @@ class DecisionTreeTrainerParams(BaseParameters):
 def decision_tree_trainer(
     params: DecisionTreeTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+) -> Tuple[Annotated[ClassifierMixin,"model"], Annotated[float,"accuracy"]]:
     """Train a sklearn decision tree classifier.
 
     If the experiment tracker is enabled, the model and the training accuracy

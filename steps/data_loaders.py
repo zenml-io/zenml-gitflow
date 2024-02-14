@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 
 """Data loader steps for the Iris classification pipeline."""
 
-from enum import Enum
-from typing import Optional
+from typing import Optional, Tuple
 import pandas as pd
-from sklearn.datasets import load_breast_cancer, load_iris
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from zenml.steps import BaseParameters, Output, step
-import requests
+from zenml.steps import BaseParameters
+from zenml import step
+from typing_extensions import Annotated
 
 
 DATASET_TARGET_COLUMN_NAME = "target"
@@ -91,7 +91,7 @@ class DataSplitterStepParameters(BaseParameters):
 def data_splitter(
     params: DataSplitterStepParameters,
     dataset: pd.DataFrame, 
-) -> Output(train=pd.DataFrame, test=pd.DataFrame,):
+) -> Tuple[Annotated[pd.DataFrame,"train"], Annotated[pd.DataFrame,"test"]]:
     """Split the dataset into train and test (validation) subsets.
 
     Args:

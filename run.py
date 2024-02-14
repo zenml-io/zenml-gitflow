@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
 import argparse
 from enum import Enum
 from typing import Optional
-import zenml
 from zenml.client import Client
 from zenml.config import DockerSettings
-from zenml.config.docker_settings import PythonEnvironmentExportMethod
 
 from pipelines import (
     gitflow_training_pipeline,
@@ -28,46 +26,24 @@ from pipelines import (
 from steps.data_loaders import (
     DataLoaderStepParameters,
     DataSplitterStepParameters,
-    data_loader,
-    data_splitter,
 )
 from zenml.integrations.deepchecks.visualizers import DeepchecksVisualizer
 from steps.model_appraisers import (
     ModelAppraisalStepParams,
-    model_train_appraiser,
-    model_train_reference_appraiser,
-)
-from steps.model_loaders import (
-    ServedModelLoaderStepParameters,
-    TrainedModelLoaderStepParameters,
-    served_model_loader,
-    trained_model_loader,
 )
 
 from steps.model_trainers import (
     DecisionTreeTrainerParams,
-    SVCTrainerParams,
-    decision_tree_trainer,
-    svc_trainer,
 )
 
-from steps.data_validators import (
-    data_drift_detector,
-    data_integrity_checker,
-)
 from steps.model_evaluators import (
     ModelScorerStepParams,
-    model_scorer,
-    model_evaluator,
-    optional_model_scorer,
-    train_test_model_evaluator,
 )
 from zenml.enums import ExecutionStatus
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
 from zenml.integrations.deepchecks import DeepchecksIntegration
 from utils.kubeflow_helper import get_kubeflow_settings
 from utils.report_generators import (
-    deepcheck_suite_to_pdf,
     get_result_and_write_report,
     get_result_and_write_report,
 )
@@ -123,73 +99,7 @@ def main(
     )
     settings["docker"] = docker_settings
 
-    model_trainer = decision_tree_trainer(
-        params=DecisionTreeTrainerParams(
-            random_state=RANDOM_STATE,
-            max_depth=5,
-        )
-    )
-
     client = Client()
-    if pipeline_name == Pipeline.END_TO_END:
-        model_deployer = client.active_stack.model_deployer
-        if model_deployer is None:
-            raise ValueError(
-                "Cannot run the deployment or end-to-end pipeline: no model "
-                "deployer found in stack. "
-            )
-        elif model_deployer.flavor == "mlflow":
-
-            from zenml.integrations.mlflow.steps import (
-                MLFlowDeployerParameters,
-                mlflow_model_deployer_step,
-            )
-
-            if model_name != "model":
-                raise ValueError(
-                    "Cannot run the deployment or end-to-end pipeline: "
-                    "model name must be `model` when using the MLFlow "
-                    "deployer."
-                )
-
-            mlflow_model_deployer = mlflow_model_deployer_step(
-                params=MLFlowDeployerParameters(
-                    model_name=model_name,
-                    timeout=120,
-                ),
-            )
-
-            model_deployer_step = mlflow_model_deployer
-
-        elif model_deployer.flavor == "kserve":
-
-            from zenml.integrations.kserve.services import (
-                KServeDeploymentConfig,
-            )
-            from zenml.integrations.kserve.steps import (
-                KServeDeployerStepParameters,
-                kserve_model_deployer_step,
-            )
-
-            model_deployer_step = kserve_model_deployer_step(
-                params=KServeDeployerStepParameters(
-                    service_config=KServeDeploymentConfig(
-                        model_name=model_name,
-                        replicas=1,
-                        predictor="sklearn",
-                        resources={
-                            "requests": {"cpu": "200m", "memory": "500m"}
-                        },
-                    ),
-                    timeout=120,
-                )
-            )
-        else:
-            raise ValueError(
-                f"Cannot run the deployment or end-to-end pipeline: "
-                f"model deployer flavor `{model_deployer.flavor}` not "
-                f"supported by the pipeline."
-            )
 
     orchestrator = client.active_stack.orchestrator
     assert orchestrator is not None, "Orchestrator not in stack."
@@ -199,95 +109,59 @@ def main(
     if pipeline_name == Pipeline.TRAIN:
 
         pipeline_instance = gitflow_training_pipeline(
-            importer=data_loader(
-                params=DataLoaderStepParameters(
-                    version=dataset_version,
-                ),
+            loader_params=DataLoaderStepParameters(
+                version=dataset_version,
             ),
-            data_splitter=data_splitter(
-                params=DataSplitterStepParameters(
-                    test_size=TRAIN_TEST_SPLIT,
-                    random_state=RANDOM_STATE,
-                )
+            splitter_params=DataSplitterStepParameters(
+                test_size=TRAIN_TEST_SPLIT,
+                random_state=RANDOM_STATE,
             ),
-            data_integrity_checker=data_integrity_checker,
-            train_test_data_drift_detector=data_drift_detector,
-            model_trainer=model_trainer,
-            model_scorer=model_scorer(
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="test_accuracy",
-                )
+            model_scorer_params=ModelScorerStepParams(
+                accuracy_metric_name="test_accuracy",
             ),
-            model_evaluator=model_evaluator,
-            train_test_model_evaluator=train_test_model_evaluator,
-            model_appraiser=model_train_appraiser(
-                params=ModelAppraisalStepParams(
-                    train_accuracy_threshold=MIN_TRAIN_ACCURACY,
-                    test_accuracy_threshold=MIN_TEST_ACCURACY,
-                    warnings_as_errors=WARNINGS_AS_ERRORS,
-                    ignore_data_integrity_failures=ignore_checks,
-                    ignore_train_test_data_drift_failures=ignore_checks,
-                    ignore_model_evaluation_failures=ignore_checks,
-                )
+            model_appraiser_params=ModelAppraisalStepParams(
+                train_accuracy_threshold=MIN_TRAIN_ACCURACY,
+                test_accuracy_threshold=MIN_TEST_ACCURACY,
+                warnings_as_errors=WARNINGS_AS_ERRORS,
+                ignore_data_integrity_failures=ignore_checks,
+                ignore_train_test_data_drift_failures=ignore_checks,
+                ignore_model_evaluation_failures=ignore_checks,
+            ),
+            trainer_params=DecisionTreeTrainerParams(
+                random_state=RANDOM_STATE,
+                max_depth=5,
             ),
         )
 
     elif pipeline_name == Pipeline.END_TO_END:
 
         pipeline_instance = gitflow_end_to_end_pipeline(
-            importer=data_loader(
-                params=DataLoaderStepParameters(
-                    version=dataset_version,
-                ),
+            loader_params=DataLoaderStepParameters(
+                version=dataset_version,
             ),
-            data_splitter=data_splitter(
-                params=DataSplitterStepParameters(
-                    test_size=TRAIN_TEST_SPLIT,
-                    random_state=RANDOM_STATE,
-                )
+            splitter_params=DataSplitterStepParameters(
+                test_size=TRAIN_TEST_SPLIT,
+                random_state=RANDOM_STATE,
             ),
-            data_integrity_checker=data_integrity_checker,
-            train_test_data_drift_detector=data_drift_detector,
-            model_trainer=model_trainer,
-            model_scorer=model_scorer(
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="test_accuracy",
-                )
+            model_scorer_params=ModelScorerStepParams(
+                accuracy_metric_name="test_accuracy",
             ),
-            model_evaluator=model_evaluator,
-            train_test_model_evaluator=train_test_model_evaluator,
-            served_model_loader=served_model_loader(
-                params=ServedModelLoaderStepParameters(
-                    model_name=model_name,
-                    step_name="model_deployer",
-                )
+            model_appraiser_params=ModelAppraisalStepParams(
+                train_accuracy_threshold=MIN_TRAIN_ACCURACY,
+                test_accuracy_threshold=MIN_TEST_ACCURACY,
+                max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
+                max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
+                warnings_as_errors=WARNINGS_AS_ERRORS,
+                ignore_data_integrity_failures=ignore_checks,
+                ignore_train_test_data_drift_failures=ignore_checks,
+                ignore_model_evaluation_failures=ignore_checks,
+                ignore_reference_model=ignore_checks,
             ),
-            served_model_train_scorer=optional_model_scorer(
-                name="served_model_train_scorer",
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="reference_train_accuracy",
-                ),
+            trainer_params=DecisionTreeTrainerParams(
+                random_state=RANDOM_STATE,
+                max_depth=5,
             ),
-            served_model_test_scorer=optional_model_scorer(
-                name="served_model_test_scorer",
-                params=ModelScorerStepParams(
-                    accuracy_metric_name="reference_test_accuracy",
-                ),
-            ),
-            model_appraiser=model_train_reference_appraiser(
-                params=ModelAppraisalStepParams(
-                    train_accuracy_threshold=MIN_TRAIN_ACCURACY,
-                    test_accuracy_threshold=MIN_TEST_ACCURACY,
-                    max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
-                    max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
-                    warnings_as_errors=WARNINGS_AS_ERRORS,
-                    ignore_data_integrity_failures=ignore_checks,
-                    ignore_train_test_data_drift_failures=ignore_checks,
-                    ignore_model_evaluation_failures=ignore_checks,
-                    ignore_reference_model=ignore_checks,
-                )
-            ),
-            model_deployer=model_deployer_step,
+            model_name=model_name,
         )
 
     else:
@@ -340,7 +214,7 @@ def main(
         # To generate the Deepchecks reports as PDF files, uncomment the following lines:
         #
         # NOTE: you also need to install `wkhtmltopdf` on your machine for this
-        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`). 
+        # to work (e.g. on Ubuntu: `sudo apt install wkhtmltopdf`).
         #
         # deepcheck_suite_to_pdf(data_integrity_step, "data_integrity_report.pdf")
         # deepcheck_suite_to_pdf(data_drift_step, "data_drift_report.pdf")
