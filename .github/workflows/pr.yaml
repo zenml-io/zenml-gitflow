@@ -23,24 +23,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-      
-      - name: Configure GCP
-        if: ${{ github.base_ref == 'staging' }}
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-
-      - name: 'Set up Cloud SDK'
-        if: ${{ github.base_ref == 'staging' }}
-        uses: 'google-github-actions/setup-gcloud@v1'
-
-      - id: install-kubectl
-        uses: azure/setup-kubectl@v3
- 
-      - name: Authenticate docker
-        if: ${{ github.base_ref == 'staging' }}
-        run: |
-          gcloud auth configure-docker --project zenml-demos
             
       - uses: actions/setup-python@v4
         with:
@@ -49,7 +31,7 @@ jobs:
       - name: Install requirements
         if: ${{ github.base_ref == 'staging' }}
         run: |
-          make install-gcp
+          make install-base
       
       - name: Install requirements
         if: ${{ github.base_ref == 'main' }}
