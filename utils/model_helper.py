@@ -20,7 +20,7 @@ from typing import Optional, Tuple
 from zenml.client import Client
 from zenml.enums import ArtifactType
 from zenml.services import BaseService
-from zenml.post_execution import get_pipeline, StepView
+from zenml.post_execution import get_pipeline
 
 
 def load_deployed_model(
@@ -62,9 +62,8 @@ def load_deployed_model(
         )
         return None, None
 
-    step_view = StepView(step)
-    step_model_input = step_view.inputs["model"]
-    model = step_model_input.read(output_data_type=ClassifierMixin)
+    step_model_input = step.inputs["model"]
+    model = step_model_input.read()
     return model_servers[0], model
 
 

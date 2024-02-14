@@ -18,7 +18,6 @@ serving the model."""
 
 import tempfile
 from typing import List, Optional, Tuple
-from zenml.steps import BaseParameters
 from zenml import step
 from typing_extensions import Annotated
 from utils.tracker_helper import (
@@ -30,10 +29,51 @@ from utils.tracker_helper import (
 from deepchecks import SuiteResult
 
 
-class ModelAppraisalStepParams(BaseParameters):
-    """Parameters for the model training appraisal step.
+def model_analysis(
+    train_accuracy: float,
+    test_accuracy: float,
+    data_integrity_report: SuiteResult,
+    train_test_data_drift_report: SuiteResult,
+    model_evaluation_report: SuiteResult,
+    train_test_model_evaluation_report: SuiteResult,
+    reference_train_accuracy: Optional[float] = None,
+    reference_test_accuracy: Optional[float] = None,
+    train_accuracy_threshold: float = 0.7,
+    test_accuracy_threshold: float = 0.7,
+    warnings_as_errors: bool = False,
+    ignore_data_integrity_failures: bool = False,
+    ignore_train_test_data_drift_failures: bool = False,
+    ignore_model_evaluation_failures: bool = False,
+    ignore_reference_model: bool = False,
+    max_train_accuracy_diff: float = 0.1,
+    max_test_accuracy_diff: float = 0.05,
+) -> Tuple[bool, str]:
+    """Analyze the model training and evaluation results, generate a report and
+    make a decision about serving the model.
 
-    Attributes:
+    The gathered results are analyzed and a decision is made about whether the
+    model should be served or not. The decision is based on the accuracy of the
+    model on the training and test data, the data integrity report, the train-test
+    data drift report, the model evaluation report, and the train-test model
+    evaluation report. If accuracy values are provided for a reference model,
+    the performance difference between the reference model and the trained model
+    is also taken into account.
+
+    The function also generates a human-readable report that is returned
+    alongside the decision.
+
+    Args:
+        train_accuracy: The accuracy of the trained model on the training data.
+        test_accuracy: The accuracy of the trained model on the test data.
+        data_integrity_report: The data integrity report.
+        train_test_data_drift_report: The train-test data drift report.
+        model_evaluation_report: The model evaluation report.
+        train_test_model_evaluation_report: The train-test model evaluation
+            report.
+        reference_train_accuracy: Accuracy of the reference model measured on
+            the training data (omitted if there is no reference model).
+        reference_test_accuracy: Accuracy of the reference model measured on
+            the test data (omitted if there is no reference model).
         train_accuracy_threshold: The minimum accuracy of the model on the
             training data.
         test_accuracy_threshold: The minimum accuracy of the model on the test
@@ -52,57 +92,6 @@ class ModelAppraisalStepParams(BaseParameters):
             the trained model and the reference model on the training data.
         max_test_accuracy_diff: The maximum difference between the accuracy of
             the trained model and the reference model on the test data.
-    """
-
-    train_accuracy_threshold: float = 0.7
-    test_accuracy_threshold: float = 0.7
-    warnings_as_errors: bool = False
-    ignore_data_integrity_failures: bool = False
-    ignore_train_test_data_drift_failures: bool = False
-    ignore_model_evaluation_failures: bool = False
-    ignore_reference_model: bool = False
-    max_train_accuracy_diff: float = 0.1
-    max_test_accuracy_diff: float = 0.05
-
-
-def model_analysis(
-    params: ModelAppraisalStepParams,
-    train_accuracy: float,
-    test_accuracy: float,
-    data_integrity_report: SuiteResult,
-    train_test_data_drift_report: SuiteResult,
-    model_evaluation_report: SuiteResult,
-    train_test_model_evaluation_report: SuiteResult,
-    reference_train_accuracy: Optional[float] = None,
-    reference_test_accuracy: Optional[float] = None,
-) -> Tuple[bool, str]:
-    """Analyze the model training and evaluation results, generate a report and
-    make a decision about serving the model.
-
-    The gathered results are analyzed and a decision is made about whether the
-    model should be served or not. The decision is based on the accuracy of the
-    model on the training and test data, the data integrity report, the train-test
-    data drift report, the model evaluation report, and the train-test model
-    evaluation report. If accuracy values are provided for a reference model,
-    the performance difference between the reference model and the trained model
-    is also taken into account.
-
-    The function also generates a human-readable report that is returned
-    alongside the decision.
-
-    Args:
-        params: Training appraisal configuration parameters.
-        train_accuracy: The accuracy of the trained model on the training data.
-        test_accuracy: The accuracy of the trained model on the test data.
-        data_integrity_report: The data integrity report.
-        train_test_data_drift_report: The train-test data drift report.
-        model_evaluation_report: The model evaluation report.
-        train_test_model_evaluation_report: The train-test model evaluation
-            report.
-        reference_train_accuracy: Accuracy of the reference model measured on
-            the training data (omitted if there is no reference model).
-        reference_test_accuracy: Accuracy of the reference model measured on
-            the test data (omitted if there is no reference model).
 
     Returns:
         A tuple of the appraisal decision and a report message.
@@ -113,22 +102,22 @@ def model_analysis(
         (
             data_integrity_report,
             "data_integrity_report",
-            params.ignore_data_integrity_failures,
+            ignore_data_integrity_failures,
         ),
         (
             train_test_data_drift_report,
             "train_test_data_drift_report",
-            params.ignore_train_test_data_drift_failures,
+            ignore_train_test_data_drift_failures,
         ),
         (
             model_evaluation_report,
             "model_evaluation_report",
-            params.ignore_model_evaluation_failures,
+            ignore_model_evaluation_failures,
         ),
         (
             train_test_model_evaluation_report,
             "train_test_model_evaluation_report",
-            params.ignore_model_evaluation_failures,
+            ignore_model_evaluation_failures,
         ),
     ]:
         # Log Deepchecks suite results to the experiment tracker.
@@ -154,7 +143,7 @@ def model_analysis(
             if check not in failed_checks
         ]
         skipped_checks = suite_result.get_not_ran_checks()
-        check_passed = suite_result.passed(fail_if_warning=params.warnings_as_errors)
+        check_passed = suite_result.passed(fail_if_warning=warnings_as_errors)
         results.append(
             (
                 check_passed,
@@ -169,10 +158,10 @@ def model_analysis(
         if not check_passed and not ignored:
             passed = False
 
-    if train_accuracy < params.train_accuracy_threshold:
+    if train_accuracy < train_accuracy_threshold:
         passed = False
 
-    if test_accuracy < params.test_accuracy_threshold:
+    if test_accuracy < test_accuracy_threshold:
         passed = False
 
     report = f"""
@@ -185,24 +174,24 @@ Overall decision: {'**PASSED**' if passed else '**FAILED**'}
 ### Model accuracy on training dataset
 
 Description: Checks how well the model performs on the training dataset.
-The model accuracy on the training set should be at least {params.train_accuracy_threshold}.
+The model accuracy on the training set should be at least {train_accuracy_threshold}.
 
-Result: {'**PASSED**' if train_accuracy >= params.train_accuracy_threshold else '**FAILED**'}
+Result: {'**PASSED**' if train_accuracy >= train_accuracy_threshold else '**FAILED**'}
 
-- min. accuracy: {params.train_accuracy_threshold}
+- min. accuracy: {train_accuracy_threshold}
 - actual accuracy: {train_accuracy}
 
 ### Model accuracy on evaluation dataset
 
 Description: Checks how well the model performs on the evaluation dataset.
-The model accuracy on the evaluation set should be at least {params.test_accuracy_threshold}.
+The model accuracy on the evaluation set should be at least {test_accuracy_threshold}.
 
-Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '**FAILED**'}
+Result: {'**PASSED**' if test_accuracy >= test_accuracy_threshold else '**FAILED**'}
 
-- min. accuracy: {params.test_accuracy_threshold}
+- min. accuracy: {test_accuracy_threshold}
 - actual accuracy: {test_accuracy}
 
-### Data integrity checks {'(ignored)' if params.ignore_data_integrity_failures else ''}
+### Data integrity checks {'(ignored)' if ignore_data_integrity_failures else ''}
 
 Description: A set of data quality checks that verify whether the input data is
 valid and can be used for training (no duplicate samples, no missing values or
@@ -216,7 +205,7 @@ Results: {'**PASSED**' if results[0][0] else '**FAILED**'}
 - checks with warnings: {results[0][3]}  [{', '.join(results[0][6])}]
 - skipped checks: {results[0][4]}
 
-### Train-test data drift checks {'(ignored)' if params.ignore_train_test_data_drift_failures else ''}
+### Train-test data drift checks {'(ignored)' if ignore_train_test_data_drift_failures else ''}
 
 Description: Compares the training and evaluation datasets to verify that their
 distributions are similar and there is no potential data leakage that may
@@ -229,7 +218,7 @@ Results: {'**PASSED**' if results[1][0] else '**FAILED**'}
 - checks with warnings: {results[1][3]}  [{', '.join(results[1][6])}]
 - skipped checks: {results[1][4]}
 
-### Model evaluation checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
+### Model evaluation checks {'(ignored)' if ignore_model_evaluation_failures else ''}
 
 Description: Runs a set of checks to evaluate the model performance, detect
 overfitting, and verify that the model is not biased.
@@ -241,7 +230,7 @@ Results: {'**PASSED**' if results[2][0] else '**FAILED**'}
 - checks with warnings: {results[2][3]}  [{', '.join(results[2][6])}]
 - skipped checks: {results[2][4]}
 
-### Train-test model comparison checks {'(ignored)' if params.ignore_model_evaluation_failures else ''}
+### Train-test model comparison checks {'(ignored)' if ignore_model_evaluation_failures else ''}
 
 Description: Runs a set of checks to compare the model performance between the
 test dataset and the evaluation dataset.
@@ -259,39 +248,39 @@ Results: {'**PASSED**' if results[3][0] else '**FAILED**'}
         and reference_test_accuracy is not None
     ):
 
-        if not params.ignore_reference_model:
+        if not ignore_reference_model:
             if (
                 reference_train_accuracy - train_accuracy
-            ) > params.max_train_accuracy_diff:
+            ) > max_train_accuracy_diff:
                 passed = False
 
             if (
                 reference_test_accuracy - test_accuracy
-            ) > params.max_test_accuracy_diff:
+            ) > max_test_accuracy_diff:
                 passed = False
 
         report += f"""
-### Model comparison with reference model on training dataset {'(ignored)' if params.ignore_reference_model else ''}
+### Model comparison with reference model on training dataset {'(ignored)' if ignore_reference_model else ''}
 
 Description: Compares the performance of the trained model on the training
 dataset against a reference model that is already deployed in production.
 The difference in accuracy on the training dataset should not exceed
-{params.max_train_accuracy_diff}.
+{max_train_accuracy_diff}.
 
-Result: {'**PASSED**' if train_accuracy >= params.train_accuracy_threshold else '**FAILED**'}
+Result: {'**PASSED**' if train_accuracy >= train_accuracy_threshold else '**FAILED**'}
 
 - trained model accuracy: {train_accuracy}
 - reference model accuracy: {reference_train_accuracy}
 - (absolute) difference in accuracy: {abs(reference_train_accuracy - train_accuracy)}
 
-### Model comparison with reference model on evaluation dataset {'(ignored)' if params.ignore_reference_model else ''}
+### Model comparison with reference model on evaluation dataset {'(ignored)' if ignore_reference_model else ''}
 
 Description: Compares the performance of the trained model on the evaluation
 dataset against a reference model that is already deployed in production.
 The difference in accuracy on the evaluation dataset should not exceed
-{params.max_test_accuracy_diff}.
+{max_test_accuracy_diff}.
 
-Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '**FAILED**'}
+Result: {'**PASSED**' if test_accuracy >= test_accuracy_threshold else '**FAILED**'}
 
 - trained model accuracy: {test_accuracy}
 - reference model accuracy: {reference_test_accuracy}
@@ -312,13 +301,21 @@ Result: {'**PASSED**' if test_accuracy >= params.test_accuracy_threshold else '*
     experiment_tracker=get_tracker_name(),
 )
 def model_train_appraiser(
-    params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
     data_integrity_report: SuiteResult,
     train_test_data_drift_report: SuiteResult,
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
+    train_accuracy_threshold: float = 0.7,
+    test_accuracy_threshold: float = 0.7,
+    warnings_as_errors: bool = False,
+    ignore_data_integrity_failures: bool = False,
+    ignore_train_test_data_drift_failures: bool = False,
+    ignore_model_evaluation_failures: bool = False,
+    ignore_reference_model: bool = False,
+    max_train_accuracy_diff: float = 0.1,
+    max_test_accuracy_diff: float = 0.05,
 ) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -330,8 +327,6 @@ def model_train_appraiser(
     It also generates a report that summarizes the results of the analysis.
 
     Args:
-        params: Model training appraisal step parameters (e.g. thresholds,
-            silenced checks, etc.).
         train_accuracy: Accuracy of the trained model on the training dataset.
         test_accuracy: Accuracy of the trained model on the evaluation dataset.
         data_integrity_report: Data integrity report computed by Deepchecks on
@@ -343,12 +338,30 @@ def model_train_appraiser(
         train_test_model_evaluation_report: Train-test model evaluation report
             computed by Deepchecks on the input model and the train/test
             datasets.
+        train_accuracy_threshold: The minimum accuracy of the model on the
+            training data.
+        test_accuracy_threshold: The minimum accuracy of the model on the test
+            data.
+        warnings_as_errors: Whether to treat Deepchecks warnings as errors.
+        ignore_data_integrity_failures: Whether to ignore data integrity
+            failures reported by Deepchecks on the input data.
+        ignore_train_test_data_drift_failures: Whether to ignore train-test data
+            drift check failures reported by Deepchecks on the train/test
+            datasets.
+        ignore_model_evaluation_failures: Whether to ignore model evaluation
+            failures reported by Deepchecks on the model.
+        ignore_reference_model: Whether to ignore the reference model in the
+            model appraisal.
+        max_train_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the training data.
+        max_test_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the test data.
+
 
     Returns:
         A tuple of the model appraisal result and the model appraisal report.
     """
-    return model_analysis(
-        params=params,
+    passed, report = model_analysis(
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
         data_integrity_report=data_integrity_report,
@@ -357,14 +370,23 @@ def model_train_appraiser(
         train_test_model_evaluation_report=train_test_model_evaluation_report,
         reference_train_accuracy=None,
         reference_test_accuracy=None,
+        train_accuracy_threshold=train_accuracy_threshold,
+        test_accuracy_threshold=test_accuracy_threshold,
+        warnings_as_errors=warnings_as_errors,
+        ignore_data_integrity_failures=ignore_data_integrity_failures,
+        ignore_train_test_data_drift_failures=ignore_train_test_data_drift_failures,
+        ignore_model_evaluation_failures=ignore_model_evaluation_failures,
+        ignore_reference_model=ignore_reference_model,
+        max_train_accuracy_diff=max_train_accuracy_diff,
+        max_test_accuracy_diff=max_test_accuracy_diff,
     )
+    return passed, report
 
 
 @step(
     experiment_tracker=get_tracker_name(),
 )
 def model_train_reference_appraiser(
-    params: ModelAppraisalStepParams,
     train_accuracy: float,
     test_accuracy: float,
     reference_train_accuracy: float,
@@ -373,6 +395,15 @@ def model_train_reference_appraiser(
     train_test_data_drift_report: SuiteResult,
     model_evaluation_report: SuiteResult,
     train_test_model_evaluation_report: SuiteResult,
+    train_accuracy_threshold: float = 0.7,
+    test_accuracy_threshold: float = 0.7,
+    warnings_as_errors: bool = False,
+    ignore_data_integrity_failures: bool = False,
+    ignore_train_test_data_drift_failures: bool = False,
+    ignore_model_evaluation_failures: bool = False,
+    ignore_reference_model: bool = False,
+    max_train_accuracy_diff: float = 0.1,
+    max_test_accuracy_diff: float = 0.05,
 ) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -403,23 +434,50 @@ def model_train_reference_appraiser(
         train_test_model_evaluation_report: Train-test model evaluation report
             computed by Deepchecks on the input model and the train/test
             datasets.
+        train_accuracy_threshold: The minimum accuracy of the model on the
+            training data.
+        test_accuracy_threshold: The minimum accuracy of the model on the test
+            data.
+        warnings_as_errors: Whether to treat Deepchecks warnings as errors.
+        ignore_data_integrity_failures: Whether to ignore data integrity
+            failures reported by Deepchecks on the input data.
+        ignore_train_test_data_drift_failures: Whether to ignore train-test data
+            drift check failures reported by Deepchecks on the train/test
+            datasets.
+        ignore_model_evaluation_failures: Whether to ignore model evaluation
+            failures reported by Deepchecks on the model.
+        ignore_reference_model: Whether to ignore the reference model in the
+            model appraisal.
+        max_train_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the training data.
+        max_test_accuracy_diff: The maximum difference between the accuracy of
+            the trained model and the reference model on the test data.
 
     Returns:
         A tuple of the model appraisal result and the model appraisal report.
     """
 
-    return model_analysis(
-        params=params,
+    passed, report = model_analysis(
         train_accuracy=train_accuracy,
         test_accuracy=test_accuracy,
         data_integrity_report=data_integrity_report,
         train_test_data_drift_report=train_test_data_drift_report,
         model_evaluation_report=model_evaluation_report,
         train_test_model_evaluation_report=train_test_model_evaluation_report,
-        reference_train_accuracy=reference_train_accuracy
-        if reference_train_accuracy
-        else None,
-        reference_test_accuracy=reference_test_accuracy
-        if reference_test_accuracy
-        else None,
+        reference_train_accuracy=(
+            reference_train_accuracy if reference_train_accuracy else None
+        ),
+        reference_test_accuracy=(
+            reference_test_accuracy if reference_test_accuracy else None
+        ),
+        train_accuracy_threshold=train_accuracy_threshold,
+        test_accuracy_threshold=test_accuracy_threshold,
+        warnings_as_errors=warnings_as_errors,
+        ignore_data_integrity_failures=ignore_data_integrity_failures,
+        ignore_train_test_data_drift_failures=ignore_train_test_data_drift_failures,
+        ignore_model_evaluation_failures=ignore_model_evaluation_failures,
+        ignore_reference_model=ignore_reference_model,
+        max_train_accuracy_diff=max_train_accuracy_diff,
+        max_test_accuracy_diff=max_test_accuracy_diff,
     )
+    return passed, report

@@ -13,30 +13,14 @@
 #  permissions and limitations under the License.
 
 import argparse
-from enum import Enum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from zenml.client import Client
 from zenml.config import DockerSettings
+from zenml import Model
 
 from pipelines import (
     gitflow_training_pipeline,
     gitflow_end_to_end_pipeline,
-)
-
-from steps.data_loaders import (
-    DataLoaderStepParameters,
-    DataSplitterStepParameters,
-)
-from steps.model_appraisers import (
-    ModelAppraisalStepParams,
-)
-
-from steps.model_trainers import (
-    DecisionTreeTrainerParams,
-)
-
-from steps.model_evaluators import (
-    ModelScorerStepParams,
 )
 from zenml.enums import ExecutionStatus
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
@@ -47,6 +31,11 @@ from utils.report_generators import (
     get_result_and_write_report,
 )
 from utils.tracker_helper import LOCAL_MLFLOW_UI_PORT, get_tracker_name
+from zenml.utils.enum_utils import StrEnum
+
+if TYPE_CHECKING:
+    from zenml.models import PipelineRunResponse
+
 
 # These global parameters should be the same across all workflow stages.
 RANDOM_STATE = 23
@@ -56,10 +45,9 @@ MIN_TEST_ACCURACY = 0.9
 MAX_SERVE_TRAIN_ACCURACY_DIFF = 0.1
 MAX_SERVE_TEST_ACCURACY_DIFF = 0.05
 WARNINGS_AS_ERRORS = False
+MODEL_NAME = "gitflow_model"
 
-
-class Pipeline(str, Enum):
-
+class Pipeline(StrEnum):
     TRAIN = "train"
     END_TO_END = "end-to-end"
 
@@ -87,6 +75,7 @@ def main(
     pipeline_args = {}
     if disable_caching:
         pipeline_args["enable_cache"] = False
+    pipeline_args["model"] = Model(name=MODEL_NAME)
 
     docker_settings = DockerSettings(
         install_stack_requirements=False,
@@ -101,76 +90,50 @@ def main(
     if orchestrator.flavor == "kubeflow":
         settings["orchestrator.kubeflow"] = get_kubeflow_settings()
 
+    common_params = dict(
+        dataset_version=dataset_version,
+        test_size=TRAIN_TEST_SPLIT,
+        random_state=RANDOM_STATE,
+        accuracy_metric_name="test_accuracy",
+        train_accuracy_threshold=MIN_TRAIN_ACCURACY,
+        test_accuracy_threshold=MIN_TEST_ACCURACY,
+        warnings_as_errors=WARNINGS_AS_ERRORS,
+        ignore_data_integrity_failures=ignore_checks,
+        ignore_train_test_data_drift_failures=ignore_checks,
+        ignore_model_evaluation_failures=ignore_checks,
+        ignore_reference_model=ignore_checks,
+        max_depth=5,
+    )
+
     if pipeline_name == Pipeline.TRAIN:
 
-        pipeline_instance = gitflow_training_pipeline(
-            loader_params=DataLoaderStepParameters(
-                version=dataset_version,
-            ),
-            splitter_params=DataSplitterStepParameters(
-                test_size=TRAIN_TEST_SPLIT,
-                random_state=RANDOM_STATE,
-            ),
-            model_scorer_params=ModelScorerStepParams(
-                accuracy_metric_name="test_accuracy",
-            ),
-            model_appraiser_params=ModelAppraisalStepParams(
-                train_accuracy_threshold=MIN_TRAIN_ACCURACY,
-                test_accuracy_threshold=MIN_TEST_ACCURACY,
-                warnings_as_errors=WARNINGS_AS_ERRORS,
-                ignore_data_integrity_failures=ignore_checks,
-                ignore_train_test_data_drift_failures=ignore_checks,
-                ignore_model_evaluation_failures=ignore_checks,
-            ),
-            trainer_params=DecisionTreeTrainerParams(
-                random_state=RANDOM_STATE,
-                max_depth=5,
-            ),
-        )
+        run_info: PipelineRunResponse = gitflow_training_pipeline.with_options(
+            settings=settings, **pipeline_args
+        )(**common_params)
 
     elif pipeline_name == Pipeline.END_TO_END:
 
-        pipeline_instance = gitflow_end_to_end_pipeline(
-            loader_params=DataLoaderStepParameters(
-                version=dataset_version,
-            ),
-            splitter_params=DataSplitterStepParameters(
-                test_size=TRAIN_TEST_SPLIT,
-                random_state=RANDOM_STATE,
-            ),
-            model_scorer_params=ModelScorerStepParams(
-                accuracy_metric_name="test_accuracy",
-            ),
-            model_appraiser_params=ModelAppraisalStepParams(
-                train_accuracy_threshold=MIN_TRAIN_ACCURACY,
-                test_accuracy_threshold=MIN_TEST_ACCURACY,
-                max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
-                max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
-                warnings_as_errors=WARNINGS_AS_ERRORS,
-                ignore_data_integrity_failures=ignore_checks,
-                ignore_train_test_data_drift_failures=ignore_checks,
-                ignore_model_evaluation_failures=ignore_checks,
-                ignore_reference_model=ignore_checks,
-            ),
-            trainer_params=DecisionTreeTrainerParams(
-                random_state=RANDOM_STATE,
-                max_depth=5,
-            ),
+        run_info: (
+            PipelineRunResponse
+        ) = gitflow_end_to_end_pipeline.with_options(
+            settings=settings, **pipeline_args
+        )(
+            max_train_accuracy_diff=MAX_SERVE_TRAIN_ACCURACY_DIFF,
+            max_test_accuracy_diff=MAX_SERVE_TEST_ACCURACY_DIFF,
             model_name=model_name,
+            **common_params,
         )
 
     else:
         raise ValueError(f"Pipeline name `{pipeline_name}` not supported. ")
 
-    # Run pipeline
-    pipeline_instance.run(settings=settings, **pipeline_args)
+    # refresh run_info
+    run_info = client.get_pipeline_run(run_info.id)
 
-    pipeline_run = pipeline_instance.get_runs()[0]
-
-    if pipeline_run.status == ExecutionStatus.FAILED:
+    if run_info.status == ExecutionStatus.FAILED:
         print("Pipeline failed. Check the logs for more details.")
         exit(1)
-    elif pipeline_run.status == ExecutionStatus.RUNNING:
+    elif run_info.status == ExecutionStatus.RUNNING:
         print(
             "Pipeline is still running. The post-execution phase cannot "
             "proceed. Please make sure you use an orchestrator with a "
@@ -178,15 +141,7 @@ def main(
         )
         exit(1)
 
-    data_integrity_step = pipeline_run.get_step(step="data_integrity_checker")
-    data_drift_step = pipeline_run.get_step(
-        step="train_test_data_drift_detector"
-    )
-    model_evaluator_step = pipeline_run.get_step(step="model_evaluator")
-    train_test_model_evaluator_step = pipeline_run.get_step(
-        step="train_test_model_evaluator"
-    )
-    model_appraiser_step = pipeline_run.get_step(step="model_appraiser")
+    model_appraiser_step = run_info.steps["model_appraiser"]
     report, result = get_result_and_write_report(
         model_appraiser_step, "model_train_results.md"
     )
