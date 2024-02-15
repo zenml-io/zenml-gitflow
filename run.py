@@ -87,7 +87,6 @@ def main(
         required_integrations=[
             "sklearn",
             "mlflow",
-            "deepchecks",
             "s3",
             "kubernetes",
         ],

@@ -1,3 +1,4 @@
 pip-tools
 zenml>=0.55.2
 pdfkit
+deepchecks==0.8.0
