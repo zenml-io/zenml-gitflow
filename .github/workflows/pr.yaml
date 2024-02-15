@@ -9,7 +9,7 @@ concurrency:
     
 jobs:
   run-staging-workflow:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-dind-runners
     env:
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       ZENML_HOST: ${{ secrets.ZENML_HOST }}
