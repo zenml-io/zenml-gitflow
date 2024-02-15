@@ -43,7 +43,7 @@ jobs:
           zenml integration install s3 sklearn mlflow deepchecks kubernetes -y
 
       - name: Install wkhtmltopdf
-        run: sudo apt-get install wkhtmltopdf
+        run: sudo apt-get install -y wkhtmltopdf
 
       - name: Connect to ZenML server
         run: |
