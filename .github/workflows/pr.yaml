@@ -33,12 +33,14 @@ jobs:
       - name: Install requirements
         if: ${{ github.base_ref == 'staging' }}
         run: |
-          make install-base
+          pip3 install -r requirements.txt
+          zenml integration install s3 sklearn mlflow deepchecks -y
       
       - name: Install requirements
         if: ${{ github.base_ref == 'main' }}
         run: |
-          make install-aws
+          pip3 install -r requirements.txt
+          zenml integration install s3 sklearn mlflow deepchecks kubernetes -y
 
       - name: Install wkhtmltopdf
         run: sudo apt-get install wkhtmltopdf
