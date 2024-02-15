@@ -14,8 +14,6 @@
 """Utility functions for generating model training and evaluation reports."""
 
 from typing import Tuple, cast
-from deepchecks import SuiteResult
-import pdfkit
 
 from zenml.models import StepRunResponse
 

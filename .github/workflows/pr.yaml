@@ -64,7 +64,9 @@ jobs:
             --pipeline train \
             --dataset staging \
             --version ${{ env.ZENML_GITHUB_SHA }} \
-            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }}
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
+            -o ${{ secrets.ZENML_ORG_ID }} \
+            -t ${{ secrets.ZENML_TENANT_ID }}
 
 
       - name: Run pipeline (Production)
@@ -74,7 +76,9 @@ jobs:
             --pipeline end-to-end \
             --dataset production \
             --version ${{ env.ZENML_GITHUB_SHA }} \
-            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }}
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
+            -o ${{ secrets.ZENML_ORG_ID }} \
+            -t ${{ secrets.ZENML_TENANT_ID }}
 
       - name: Read training report
         id: report

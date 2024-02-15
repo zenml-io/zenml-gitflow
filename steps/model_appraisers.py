@@ -21,7 +21,7 @@ from typing import List, Optional, Tuple
 
 from deepchecks import SuiteResult
 from typing_extensions import Annotated
-from zenml import step
+from zenml import get_step_context, step
 
 from utils.tracker_helper import (
     get_current_tracker_run_url,
@@ -48,6 +48,8 @@ def model_analysis(
     ignore_reference_model: bool = False,
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ) -> Tuple[bool, str]:
     """Analyze the model training and evaluation results, generate a report and
     make a decision about serving the model.
@@ -93,6 +95,8 @@ def model_analysis(
             the trained model and the reference model on the training data.
         max_test_accuracy_diff: The maximum difference between the accuracy of
             the trained model and the reference model on the test data.
+        org_id: The ID of the organization in ZenML Cloud.
+        tenant_id: The ID of the tenant in ZenML Cloud.
 
     Returns:
         A tuple of the appraisal decision and a report message.
@@ -165,9 +169,12 @@ def model_analysis(
     if test_accuracy < test_accuracy_threshold:
         passed = False
 
+    model_version = get_step_context().model
+    link = ""
+    if org_id and tenant_id:
+        link = f"[ZenML Cloud](https://cloud.zenml.io/organizations/{org_id}/tenants/{tenant_id}/model-versions/{str(model_version.id)})"
     report = f"""
-# Model training results
-    
+# Model `{model_version.name}` version `{model_version.version}` training results {link}    
 Overall decision: {'**PASSED**' if passed else '**FAILED**'}
 
 ## Summary of checks
@@ -316,6 +323,8 @@ def model_train_appraiser(
     ignore_reference_model: bool = False,
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -379,6 +388,8 @@ def model_train_appraiser(
         ignore_reference_model=ignore_reference_model,
         max_train_accuracy_diff=max_train_accuracy_diff,
         max_test_accuracy_diff=max_test_accuracy_diff,
+        org_id=org_id,
+        tenant_id=tenant_id,
     )
     return passed, report
 
@@ -404,6 +415,8 @@ def model_train_reference_appraiser(
     ignore_reference_model: bool = False,
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ) -> Tuple[Annotated[bool, "result"], Annotated[str, "report"]]:
     """Analyze the training results, generate a report and make a decision about
     serving the model.
@@ -479,5 +492,7 @@ def model_train_reference_appraiser(
         ignore_reference_model=ignore_reference_model,
         max_train_accuracy_diff=max_train_accuracy_diff,
         max_test_accuracy_diff=max_test_accuracy_diff,
+        org_id=org_id,
+        tenant_id=tenant_id,
     )
     return passed, report

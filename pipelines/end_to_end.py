@@ -53,6 +53,8 @@ def gitflow_end_to_end_pipeline(
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
     github_pr_url: Optional[str] = None,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ):
     """Train and serve a new model if it performs better than the model
     currently served."""
@@ -125,6 +127,8 @@ def gitflow_end_to_end_pipeline(
         ignore_reference_model=ignore_reference_model,
         max_train_accuracy_diff=max_train_accuracy_diff,
         max_test_accuracy_diff=max_test_accuracy_diff,
+        org_id=org_id,
+        tenant_id=tenant_id,
     )
     get_stack_deployer(model_name=model_name)(
         deploy_decision=deploy_decision, model=model

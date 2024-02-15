@@ -53,8 +53,10 @@ def main(
     ignore_checks: bool = False,
     model_name: str = "model",
     dataset_version: Optional[str] = None,
-    version=None,
-    github_pr_url=None,
+    version: Optional[str] = None,
+    github_pr_url: Optional[str] = None,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ):
     """Main runner for all pipelines.
 
@@ -66,6 +68,11 @@ def main(
             "model".
         dataset_version: The dataset version to use to train the model. If not
             set, the original dataset shipped with sklearn will be used.
+        version: The version of the model to be created.
+        github_pr_url: The URL of the GitHub pull request.
+        org_id: The ID of the organization in ZenML Cloud.
+        tenant_id: The ID of the tenant in ZenML Cloud.
+
     """
 
     settings = {}
@@ -75,6 +82,15 @@ def main(
     pipeline_args["model"] = Model(name=MODEL_NAME, version=version)
 
     docker_settings = DockerSettings(
+        install_stack_requirements=False,
+        requirements="requirements.txt",
+        required_integrations=[
+            "sklearn",
+            "mlflow",
+            "deepchecks",
+            "s3",
+            "kubernetes",
+        ],
         apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
@@ -100,6 +116,8 @@ def main(
         ignore_reference_model=ignore_checks,
         max_depth=5,
         github_pr_url=github_pr_url,
+        org_id=org_id,
+        tenant_id=tenant_id,
     )
 
     if pipeline_name == Pipeline.TRAIN:
@@ -211,6 +229,22 @@ if __name__ == "__main__":
         type=str,
         required=False,
     )
+    parser.add_argument(
+        "-o",
+        "--org-id",
+        default=None,
+        help="ZenML Cloud Organization ID.",
+        type=str,
+        required=False,
+    )
+    parser.add_argument(
+        "-t",
+        "--tenant-id",
+        default=None,
+        help="ZenML Cloud Tenant ID.",
+        type=str,
+        required=False,
+    )
     args = parser.parse_args()
 
     assert args.pipeline in [
@@ -227,4 +261,6 @@ if __name__ == "__main__":
         dataset_version=args.dataset,
         version=args.version,
         github_pr_url=args.github_pr_url,
+        org_id=args.org_id,
+        tenant_id=args.tenant_id,
     )

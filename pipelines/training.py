@@ -49,6 +49,8 @@ def gitflow_training_pipeline(
     max_train_accuracy_diff: float = 0.1,
     max_test_accuracy_diff: float = 0.05,
     github_pr_url: Optional[str] = None,
+    org_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
 ):
     """Pipeline that trains and evaluates a new model."""
     metadata_logger(github_pr_url=github_pr_url)
@@ -100,4 +102,6 @@ def gitflow_training_pipeline(
         ignore_reference_model=ignore_reference_model,
         max_train_accuracy_diff=max_train_accuracy_diff,
         max_test_accuracy_diff=max_test_accuracy_diff,
+        org_id=org_id,
+        tenant_id=tenant_id,
     )
