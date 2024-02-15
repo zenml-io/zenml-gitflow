@@ -75,7 +75,6 @@ def main(
     pipeline_args["model"] = Model(name=MODEL_NAME, version=version)
 
     docker_settings = DockerSettings(
-        install_stack_requirements=False,
         apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
     settings["docker"] = docker_settings
