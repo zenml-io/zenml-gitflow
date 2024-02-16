@@ -63,7 +63,7 @@ def load_deployed_model(
         return None, None
 
     step_model_input = step.inputs["model"]
-    model = step_model_input.read()
+    model = step_model_input.load()
     return model_servers[0], model
 
 
