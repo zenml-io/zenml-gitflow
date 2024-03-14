@@ -172,9 +172,14 @@ def model_analysis(
     model_version = get_step_context().model
     link = ""
     if org_id and tenant_id:
-        link = f"[ZenML Cloud](https://cloud.zenml.io/organizations/{org_id}/tenants/{tenant_id}/model-versions/{str(model_version.id)})"
+        link = f"[Model Version in ZenML Cloud](https://cloud.zenml.io/organizations/{org_id}/tenants/{tenant_id}/model-versions/{str(model_version.id)})"
     report = f"""
-# Model `{model_version.name}` version `{model_version.version}` training results {link}    
+# Training results
+## Model `{model_version.name}` 
+## Model version `{model_version.version}` 
+
+{link}
+
 Overall decision: {'**PASSED**' if passed else '**FAILED**'}
 
 ## Summary of checks
