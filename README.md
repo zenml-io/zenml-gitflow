@@ -92,7 +92,7 @@ currently served in production and then, if all checks pass allow a merge to `ma
 
 Once the code reaches `main` another GitHub Action runs, which promotes the previously validated model version to `production` and from now on it can be used by various consumers (end-users via endpoints, batch prediction pipelines or other consumers).
 
-<img src="_assets/pipeline_prod.png" alt="Pipeline with production stack" width="500"/>
+<img src="_assets/pipeline_prod_2.png" alt="Pipeline with production stack" width="500"/>
 
 The pipeline implementations follow a set of best practices for MLOps summarized
 below:
