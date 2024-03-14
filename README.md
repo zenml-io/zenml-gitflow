@@ -84,9 +84,9 @@ decide if the changes should be merged.
 <img src="_assets/pipeline_staging.png" alt="Pipeline with staging stack" width="500"/>
 
 Once the PR has been reviewed and passes all checks, the branch is merged into 
-`staging`. Now `staging` branch contains changes verified by the development team separately on their feature branches, but before reaching `main` it should still pass end-to-end validation on production data using cloud stack (e.g. Kubernetes orchestrator deployed on AWS EKS with remote MlFlow and remote Artifact Store on S3). To make this happen another GitHub Action runs once a PR from `staging` to `main` is opened, which trains the collaborative model changes on 
+`staging`. Now the `staging` branch contains changes verified by the development team separately on their feature branches, but before reaching `main` it should still pass end-to-end validation on production data using the cloud stack (e.g. Kubernetes orchestrator deployed on AWS EKS with remote MLflow and remote Artifact Store on S3). To make this happen, another GitHub Action runs once a PR from `staging` to `main` is opened, which trains the collaborative model changes on 
 production data, runs some checks to compare its performance with the model
-currently served in production and then, if all checks pass allow a merge to `main`.
+currently served in production and then, if all checks pass, allows a merge to `main`.
 
 <img src="_assets/pipeline_prod.png" alt="Pipeline with production stack" width="500"/>
 
@@ -226,4 +226,4 @@ Python packages to be pinned to very specific versions, including ZenML itself.
 
 We use two sources of dependencies for this case study: 
 * `requirements.txt` with basic requirements like `zenml` package
-* `Makefile` with `zenml integration install ...` instructions, which ensures that external dependencies are aligned with ZenML version
+* `Makefile` with `zenml integration install ...` instructions, which ensures that external dependencies are aligned with the ZenML version
