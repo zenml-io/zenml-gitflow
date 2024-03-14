@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
 
 """Model training steps used to train a model on the training data."""
 
+from typing import Tuple
+
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.svm import SVC
-from zenml.client import Client
-from zenml.steps import BaseParameters, Output, step
 from sklearn.tree import DecisionTreeClassifier
+from typing_extensions import Annotated
+from zenml import ArtifactConfig, log_artifact_metadata, step
+from zenml.steps import BaseParameters
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import enable_autolog, get_tracker_name
@@ -57,9 +60,14 @@ class SVCTrainerParams(BaseParameters):
 def svc_trainer(
     params: SVCTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+) -> Tuple[
+    Annotated[
+        ClassifierMixin, ArtifactConfig(name="model", is_model_artifact=True)
+    ],
+    Annotated[float, "accuracy"],
+]:
     """Train and logs a sklearn C-support vector classification model.
-    
+
     If the experiment tracker is enabled, the model and the training accuracy
     will be logged to the experiment tracker.
 
@@ -91,39 +99,33 @@ def svc_trainer(
     return model, train_acc
 
 
-class DecisionTreeTrainerParams(BaseParameters):
-    """Parameters for the decision tree trainer step with various
-    hyperparameters.
-
-    Attributes:
-        random_state: The random state used for reproducibility. Pass an int for
-            reproducible and cached output across multiple step runs.
-        max_depth: The maximum depth of the tree.
-        extra_hyperparams: Extra hyperparameters to pass to the model
-            initializer.
-    """
-
-    random_state: int = 42
-    max_depth: int = 5
-    extra_hyperparams: dict = {}
-
-
 @step(
     experiment_tracker=get_tracker_name(),
 )
 def decision_tree_trainer(
-    params: DecisionTreeTrainerParams,
     train_dataset: pd.DataFrame,
-) -> Output(model=ClassifierMixin, accuracy=float):
+    random_state: int = 42,
+    max_depth: int = 5,
+    extra_hyperparams: dict = {},
+) -> Tuple[
+    Annotated[
+        ClassifierMixin, ArtifactConfig(name="model", is_model_artifact=True)
+    ],
+    Annotated[float, "accuracy"],
+]:
     """Train a sklearn decision tree classifier.
 
     If the experiment tracker is enabled, the model and the training accuracy
     will be logged to the experiment tracker.
 
     Args:
-        params: The hyperparameters for the model.
         train_dataset: The training dataset to train the model on.
-    
+        random_state: The random state used for reproducibility. Pass an int for
+            reproducible and cached output across multiple step runs.
+        max_depth: The maximum depth of the tree.
+        extra_hyperparams: Extra hyperparameters to pass to the model
+            initializer.
+
     Returns:
         The trained model and the training accuracy.
     """
@@ -132,12 +134,13 @@ def decision_tree_trainer(
     X = train_dataset.drop(columns=[DATASET_TARGET_COLUMN_NAME])
     y = train_dataset[DATASET_TARGET_COLUMN_NAME]
     model = DecisionTreeClassifier(
-        max_depth=5,
-        random_state=params.random_state,
-        **params.extra_hyperparams,
+        max_depth=max_depth,
+        random_state=random_state,
+        **extra_hyperparams,
     )
 
     model.fit(X, y)
     train_acc = model.score(X, y)
+    log_artifact_metadata({"train_accuracy": train_acc}, artifact_name="model")
     print(f"Train accuracy: {train_acc}")
     return model, train_acc

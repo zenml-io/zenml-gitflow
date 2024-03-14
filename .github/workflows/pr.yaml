@@ -1,0 +1,99 @@
+name: PR Flow
+on:
+  pull_request:
+    branches: [staging, main]
+concurrency:
+  # New commit on branch cancels running workflows of the same branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+    
+jobs:
+  run-staging-workflow:
+    runs-on: ubuntu-dind-runners
+    env:
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      ZENML_HOST: ${{ secrets.ZENML_HOST }}
+      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
+      ZENML_STAGING_STACK: ${{ secrets.ZENML_STAGING_STACK }}
+      ZENML_PRODUCTION_STACK: ${{ secrets.ZENML_PRODUCTION_STACK }}
+      ZENML_GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+      ZENML_GITHUB_URL_PR: ${{ github.event.pull_request._links.html.href }}
+      ZENML_DEBUG: true
+      ZENML_ANALYTICS_OPT_IN: false
+      ZENML_LOGGING_VERBOSITY: INFO
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+            
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install requirements
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          pip3 install -r requirements.txt
+          zenml integration install s3 sklearn mlflow deepchecks -y
+      
+      - name: Install requirements
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          pip3 install -r requirements.txt
+          zenml integration install s3 sklearn mlflow deepchecks kubernetes -y
+
+      - name: Install wkhtmltopdf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+
+      - name: Connect to ZenML server
+        run: |
+          zenml connect --url $ZENML_HOST --api-key $ZENML_API_KEY
+
+      - name: Set stack (Staging)
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          zenml stack set ${{ env.ZENML_STAGING_STACK }}
+
+      - name: Set stack (Production)
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          zenml stack set ${{ env.ZENML_PRODUCTION_STACK }}
+
+      - name: Run pipeline (Staging)
+        if: ${{ github.base_ref == 'staging' }}
+        run: |
+          python run.py \
+            --pipeline train \
+            --dataset staging \
+            --version ${{ env.ZENML_GITHUB_SHA }} \
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
+            -o ${{ secrets.ZENML_ORG_ID }} \
+            -t ${{ secrets.ZENML_TENANT_ID }}
+
+
+      - name: Run pipeline (Production)
+        if: ${{ github.base_ref == 'main' }}
+        run: |
+          python run.py \
+            --pipeline end-to-end \
+            --dataset production \
+            --version ${{ env.ZENML_GITHUB_SHA }} \
+            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
+            -o ${{ secrets.ZENML_ORG_ID }} \
+            -t ${{ secrets.ZENML_TENANT_ID }}
+
+      - name: Read training report
+        id: report
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./model_train_results.md
+
+      - name: PR comment with training report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: ./model_train_results.md
+          comment_tag: training_report
+          mode: recreate
+          create_if_not_exists: true

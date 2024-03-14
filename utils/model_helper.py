@@ -1,4 +1,4 @@
-#  Copyright (c) ZenML GmbH 2023. All Rights Reserved.
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ from typing import Optional, Tuple
 from zenml.client import Client
 from zenml.enums import ArtifactType
 from zenml.services import BaseService
-from zenml.post_execution import get_pipeline, StepView
+from zenml.post_execution import get_pipeline
 
 
 def load_deployed_model(
@@ -50,25 +50,20 @@ def load_deployed_model(
         return None, None
 
     pipeline_name = model_servers[0].config.pipeline_name
-    pipeline_run_id = model_servers[0].config.pipeline_run_id
-    # NOTE: this is not accurate as it points to the step function name instead
-    # of the pipeline step name. This is a bug in the model deployer.
-    # step_name = models[0].config.pipeline_step_name
 
-    pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_run_id)
+    pipeline_run = Client().get_pipeline_run(name_id_or_prefix=pipeline_name)
     steps_page = Client().list_run_steps(pipeline_run_id=pipeline_run.id)
     step = next((step for step in steps_page.items if step.name == step_name), None)
     if step is None:
         print(
             f"Could not find the pipeline step run with name {step_name} in "
-            f"pipeline run {pipeline_run_id} of pipeline {pipeline_name} that "
+            f"pipeline run {pipeline_run.id} of pipeline {pipeline_name} that "
             f"was used to deploy the model {model_name}."
         )
         return None, None
 
-    step_view = StepView(step)
-    step_model_input = step_view.inputs["model"]
-    model = step_model_input.read(output_data_type=ClassifierMixin)
+    step_model_input = step.inputs["model"]
+    model = step_model_input.load()
     return model_servers[0], model
 
 
@@ -95,7 +90,7 @@ def load_trained_model(
         print(f"No pipeline run found for pipeline {pipeline_name}.")
         return None
     pipeline_run = pipeline.runs[0]
-    step = pipeline_run.get_step(step_name)
+    step = pipeline_run.steps[step_name]
     if step is None:
         print(f"No step with name {step_name} found in pipeline run {pipeline_run.name}.")
         return None
