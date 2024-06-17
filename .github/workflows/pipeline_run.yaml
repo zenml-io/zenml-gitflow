@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
     
 jobs:
-  run-staging-workflow:
+  run-zenml-pipeline:
     runs-on: ubuntu-dind-runners
     env:
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
