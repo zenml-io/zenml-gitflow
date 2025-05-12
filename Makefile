@@ -1,6 +1,8 @@
 install-base:
-	pip3 install -r requirements.txt
-	zenml integration install s3 sklearn mlflow deepchecks -y
+	pip install uv
+	uv pip install -r requirements.txt
+	zenml integration install sklearn mlflow deepchecks -y --uv
 
-install-aws: install-base
-	zenml integration install kubernetes -y
+install-gcp: install-base
+	pip install uv
+	zenml integration install gcp -y --uv	

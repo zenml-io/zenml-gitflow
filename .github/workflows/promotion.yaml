@@ -7,7 +7,7 @@ jobs:
   run-production-workflow:
     runs-on: ubuntu-latest
     env:
-      ZENML_HOST: ${{ secrets.ZENML_HOST }}
+      ZENML_WORKSPACE: zenml-projects  # Replace with your workspace name
       ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
@@ -33,7 +33,8 @@ jobs:
 
       - name: Connect to ZenML server
         run: |
-          zenml connect --url $ZENML_HOST --api-key $ZENML_API_KEY
+         zenml login $ZENML_WORKSPACE --api-key $ZENML_API_KEY
+         zenml project set gitflow
 
       - name: Set stack
         run: |

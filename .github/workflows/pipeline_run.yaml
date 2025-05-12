@@ -51,7 +51,7 @@ jobs:
 
       - name: Login to ZenML server
         run: |
-          zenml login --url $ZENML_HOST --api-key $ZENML_API_KEY
+          zenml login $ZENML_WORKSPACE --api-key $ZENML_API_KEY
           zenml project set gitflow
 
       - name: Set stack (Staging)
