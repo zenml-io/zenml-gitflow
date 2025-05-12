@@ -8,14 +8,14 @@ concurrency:
   cancel-in-progress: true
     
 jobs:
-  run-staging-workflow:
+  run-zenml-pipeline:
     runs-on: ubuntu-dind-runners
     env:
-      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-      ZENML_HOST: ${{ secrets.ZENML_HOST }}
-      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
-      ZENML_STAGING_STACK: ${{ secrets.ZENML_STAGING_STACK }}
-      ZENML_PRODUCTION_STACK: ${{ secrets.ZENML_PRODUCTION_STACK }}
+      ZENML_WORKSPACE: zenml-projects  # Replace with your workspace name
+      ZENML_PROJECT: Gitflow # Replace with your project name
+      ZENML_STAGING_STACK: zenml-full-gcp-stack # Replace with your staging stack name
+      ZENML_PRODUCTION_STACK: zenml-full-gcp-stack # Replace with your production stack name  
+      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }} # Setup the API key in the repository secrets
       ZENML_GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
       ZENML_GITHUB_URL_PR: ${{ github.event.pull_request._links.html.href }}
       ZENML_DEBUG: true
@@ -33,23 +33,26 @@ jobs:
       - name: Install requirements
         if: ${{ github.base_ref == 'staging' }}
         run: |
-          pip3 install -r requirements.txt
-          zenml integration install s3 sklearn mlflow deepchecks -y
+          pip install uv
+          uv pip install -r requirements.txt
+          zenml integration install gcp sklearn mlflow deepchecks -y --uv
       
       - name: Install requirements
         if: ${{ github.base_ref == 'main' }}
         run: |
-          pip3 install -r requirements.txt
-          zenml integration install s3 sklearn mlflow deepchecks kubernetes -y
+          pip install uv  
+          uv pip install -r requirements.txt
+          zenml integration install gcp sklearn mlflow deepchecks -y --uv
 
       - name: Install wkhtmltopdf
         run: |
           sudo apt-get update
           sudo apt-get install -y wkhtmltopdf
 
-      - name: Connect to ZenML server
+      - name: Login to ZenML server
         run: |
-          zenml connect --url $ZENML_HOST --api-key $ZENML_API_KEY
+          zenml login --url $ZENML_HOST --api-key $ZENML_API_KEY
+          zenml project set gitflow
 
       - name: Set stack (Staging)
         if: ${{ github.base_ref == 'staging' }}
@@ -71,7 +74,6 @@ jobs:
             --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
             -o ${{ secrets.ZENML_ORG_ID }} \
             -t ${{ secrets.ZENML_TENANT_ID }}
-
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
