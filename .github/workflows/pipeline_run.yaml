@@ -11,7 +11,7 @@ jobs:
   run-zenml-pipeline:
     runs-on: ubuntu-latest
     env:
-      ZENML_WORKSPACE: zenml-projects  # Replace with your workspace name
+      ZENML_WORKSPACE: https://08694463-zenml.cloudinfra.zenml.io  # Replace with your workspace name
       ZENML_PROJECT: Gitflow # Replace with your project name
       ZENML_STAGING_STACK: zenml-full-gcp-stack # Replace with your staging stack name
       ZENML_PRODUCTION_STACK: zenml-full-gcp-stack # Replace with your production stack name  
