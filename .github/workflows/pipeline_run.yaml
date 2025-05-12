@@ -11,11 +11,11 @@ jobs:
   run-zenml-pipeline:
     runs-on: ubuntu-latest
     env:
-      ZENML_WORKSPACE: https://08694463-zenml.cloudinfra.zenml.io  # Replace with your workspace name
+      ZENML_STORE_URL: https://11870fb5-zenml.cloudinfra.zenml.io  # Replace with your workspace name
+      ZENML_STORE_API_KEY: ${{ secrets.ZENML_API_KEY }}
       ZENML_PROJECT: Gitflow # Replace with your project name
       ZENML_STAGING_STACK: zenml-full-gcp-stack # Replace with your staging stack name
       ZENML_PRODUCTION_STACK: zenml-full-gcp-stack # Replace with your production stack name  
-      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }} # Setup the API key in the repository secrets
       ZENML_GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
       ZENML_GITHUB_URL_PR: ${{ github.event.pull_request._links.html.href }}
       ZENML_DEBUG: true
@@ -51,7 +51,6 @@ jobs:
 
       - name: Login to ZenML server
         run: |
-          zenml login $ZENML_WORKSPACE --api-key $ZENML_API_KEY
           zenml project set gitflow
 
       - name: Set stack (Staging)

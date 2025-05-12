@@ -7,8 +7,8 @@ jobs:
   run-production-workflow:
     runs-on: ubuntu-latest
     env:
-      ZENML_WORKSPACE: https://08694463-zenml.cloudinfra.zenml.io  # Replace with your workspace name
-      ZENML_API_KEY: ${{ secrets.ZENML_API_KEY }}
+      ZENML_STORE_URL: https://11870fb5-zenml.cloudinfra.zenml.io  # Replace with your workspace name
+      ZENML_STORE_API_KEY: ${{ secrets.ZENML_API_KEY }}
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
@@ -33,7 +33,6 @@ jobs:
 
       - name: Connect to ZenML server
         run: |
-         zenml login $ZENML_WORKSPACE --api-key $ZENML_API_KEY
          zenml project set gitflow
 
       - name: Set stack
