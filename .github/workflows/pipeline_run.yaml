@@ -9,7 +9,7 @@ concurrency:
     
 jobs:
   run-zenml-pipeline:
-    runs-on: ubuntu-dind-runners
+    runs-on: ubuntu-latest
     env:
       ZENML_WORKSPACE: zenml-projects  # Replace with your workspace name
       ZENML_PROJECT: Gitflow # Replace with your project name
