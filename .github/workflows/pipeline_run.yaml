@@ -35,14 +35,14 @@ jobs:
         run: |
           pip install uv
           uv pip install --system -r requirements.txt
-          zenml integration install gcp sklearn mlflow deepchecks -y --uv
+          zenml integration install gcp sklearn -y --uv
       
       - name: Install requirements
         if: ${{ github.base_ref == 'main' }}
         run: |
           pip install uv  
           uv pip install --system -r requirements.txt
-          zenml integration install gcp sklearn mlflow deepchecks -y --uv
+          zenml integration install gcp sklearn -y --uv
 
       - name: Install wkhtmltopdf
         run: |
@@ -67,34 +67,28 @@ jobs:
         if: ${{ github.base_ref == 'staging' }}
         run: |
           python run.py \
-            --pipeline train \
-            --dataset staging \
-            --version ${{ env.ZENML_GITHUB_SHA }} \
-            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
-            -o ${{ secrets.ZENML_ORG_ID }} \
-            -t ${{ secrets.ZENML_TENANT_ID }}
+            --environment=staging \
+            --stack=zenml-full-gcp-stack \
+            --name=price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
         run: |
           python run.py \
-            --pipeline end-to-end \
-            --dataset production \
-            --version ${{ env.ZENML_GITHUB_SHA }} \
-            --github-pr-url ${{ env.ZENML_GITHUB_URL_PR }} \
-            -o ${{ secrets.ZENML_ORG_ID }} \
-            -t ${{ secrets.ZENML_TENANT_ID }}
+            --environment=production \
+            --stack=zenml-full-gcp-stack \
+            --name=price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
 
-      - name: Read training report
-        id: report
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: ./model_train_results.md
+      # - name: Read training report
+      #   id: report
+      #   uses: juliangruber/read-file-action@v1
+      #   with:
+      #     path: ./model_train_results.md
 
-      - name: PR comment with training report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: ./model_train_results.md
-          comment_tag: training_report
-          mode: recreate
-          create_if_not_exists: true
+      # - name: PR comment with training report
+      #   uses: thollander/actions-comment-pull-request@v2
+      #   with:
+      #     filePath: ./model_train_results.md
+      #     comment_tag: training_report
+      #     mode: recreate
+      #     create_if_not_exists: true
