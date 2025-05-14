@@ -6,8 +6,6 @@ from typing import Annotated
 from zenml import step
 from zenml import log_metadata, step
 
-
-
 @step
 def load_data(n_samples: int = 1000) -> Annotated[pd.DataFrame, "raw_data"]:
     """Load synthetic product price data with various features."""
