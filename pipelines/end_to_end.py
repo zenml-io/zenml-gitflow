@@ -130,6 +130,6 @@ def gitflow_end_to_end_pipeline(
         org_id=org_id,
         tenant_id=tenant_id,
     )
-    get_stack_deployer(model_name=model_name)(
-        deploy_decision=deploy_decision, model=model
-    )
+    # get_stack_deployer(model_name=model_name)(
+    #     deploy_decision=deploy_decision, model=model
+    # )
