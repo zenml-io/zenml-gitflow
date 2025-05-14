@@ -1,4 +1,4 @@
-zenml>=0.82.0
+zenml==0.82.0
 pandas
 numpy
 scikit-learn
