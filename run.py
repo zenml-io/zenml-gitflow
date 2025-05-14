@@ -42,7 +42,6 @@ def main(environment: str, stack: str, name: str = None):
 
         config = template.config_template
 
-
         pipeline_run = client.trigger_pipeline(
             template_id=template.id,
             run_configuration=config,
