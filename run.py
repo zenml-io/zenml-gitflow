@@ -23,7 +23,7 @@ from zenml.client import Client
     type=str,
     help="Name of the pipeline run.",
 )
-def main(environment: str, stack: str, config_path: str = None, name: str = None):
+def main(environment: str, stack: str, name: str = None):
     """
     CLI to run a pipeline with specified parameters.
     """
