@@ -84,12 +84,11 @@ def main(
     docker_settings = DockerSettings(
         install_stack_requirements=False,
         requirements="requirements.txt",
+        python_package_installer="uv",
         required_integrations=[
             "sklearn",
             "mlflow",
             "deepchecks",
-            "s3",
-            "kubernetes",
         ],
         apt_packages=DeepchecksIntegration.APT_PACKAGES,  # for Deepchecks
     )
