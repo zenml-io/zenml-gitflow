@@ -33,8 +33,6 @@ def main(environment: str, stack: str, name: str = None):
     os.environ["ZENML_ACTIVE_STACK_ID"] = str(remote_stack.id)
 
     if environment == "staging":
-        if client.get_run_template(name_id_or_prefix=name):
-            client.delete_run_template(name_id_or_prefix=name)
 
         template = price_prediction_pipeline.with_options(
                 config_path=f"configs/{environment}.yml",
@@ -51,8 +49,6 @@ def main(environment: str, stack: str, name: str = None):
         )
 
     elif environment == "production":
-        if client.get_run_template(name_id_or_prefix=name):
-            client.delete_run_template(name_id_or_prefix=name)
         
         template = price_prediction_pipeline.create_run_template(
             name=name,
