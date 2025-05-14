@@ -132,9 +132,9 @@ def model_analysis(
         with tempfile.NamedTemporaryFile(
             mode="w", delete=True, suffix=".html", encoding="utf-8"
         ) as f:
-            suite_result.save_as_html(f)
-            with open(f.name, "r") as f:
-                suite_html = f.read()
+            suite_result.save_as_html(f.name)
+            with open(f.name, "r", encoding="utf-8") as f_read:
+                suite_html = f_read.read()
         log_text(suite_html, f"{name}.html")
         passed_checks = suite_result.get_passed_checks()
         failed_checks = suite_result.get_not_passed_checks(

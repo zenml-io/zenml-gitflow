@@ -22,44 +22,41 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from typing_extensions import Annotated
 from zenml import ArtifactConfig, log_artifact_metadata, step
-from zenml.steps import BaseParameters
 
 from steps.data_loaders import DATASET_TARGET_COLUMN_NAME
 from utils.tracker_helper import enable_autolog, get_tracker_name
 
 
-class SVCTrainerParams(BaseParameters):
-    """Parameters for the SVC trainer step with various hyperparameters.
+from dataclasses import dataclass, field
+from typing import Dict
 
-    Attributes:
-        random_state: The random state used for reproducibility. Pass an int for
-            reproducible and cached output across multiple step runs.
-        C: Penalty parameter C of the error term.
-        kernel: Specifies the kernel type to be used in the algorithm.
-        degree: Degree of the polynomial kernel function.
-        coef0: Independent term in kernel function.
-        shrinking: Whether to use the shrinking heuristic.
-        probability: Whether to enable probability estimates.
-        extra_hyperparams: Extra hyperparameters to pass to the model
-            initializer.
-    """
-
+@dataclass
+class SVCTrainerParams:
+    # The random state used for reproducibility. Pass an int for
+    # reproducible and cached output across multiple step runs.
     random_state: int = 42
+    # Penalty parameter C of the error term.
     C: float = 1.320498
+    # Specifies the kernel type to be used in the algorithm.
     kernel: str = "rbf"
+    # Degree of the polynomial kernel function.
     degree: int = 3
+    # Independent term in kernel function.
     coef0: float = 0.0
+    # Whether to use the shrinking heuristic.
     shrinking: bool = True
+    # Whether to enable probability estimates.
     probability: bool = False
-    extra_hyperparams: dict = {}
+    # Extra hyperparameters to pass to the model initializer.
+    extra_hyperparams: Dict = field(default_factory=dict)
 
 
 @step(
     experiment_tracker=get_tracker_name(),
 )
 def svc_trainer(
-    params: SVCTrainerParams,
     train_dataset: pd.DataFrame,
+    params: SVCTrainerParams,
 ) -> Tuple[
     Annotated[
         ClassifierMixin, ArtifactConfig(name="model", is_model_artifact=True)

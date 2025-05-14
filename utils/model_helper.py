@@ -20,7 +20,6 @@ from typing import Optional, Tuple
 from zenml.client import Client
 from zenml.enums import ArtifactType
 from zenml.services import BaseService
-from zenml.post_execution import get_pipeline
 
 
 def load_deployed_model(
@@ -82,8 +81,7 @@ def load_trained_model(
             to train the model. If None, the first output of the step will be
             used.
     """
-
-    pipeline = get_pipeline(pipeline_name)
+    pipeline = Client().get_pipeline(pipeline_name)
     if pipeline is None:
         raise ValueError(f"No pipeline with name {pipeline_name} found.")
     if len(pipeline.runs) == 0:
