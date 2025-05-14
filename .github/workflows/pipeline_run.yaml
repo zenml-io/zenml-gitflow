@@ -69,7 +69,7 @@ jobs:
           python run.py \
             --environment=staging \
             --stack=zenml-full-gcp-stack \
-            --name=STG_price_prediction_training_${{ github.sha::7 }}
+            --name=STG_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
@@ -77,7 +77,7 @@ jobs:
           python run.py \
             --environment=production \
             --stack=zenml-full-gcp-stack \
-            --name=PROD_price_prediction_training_${{ github.sha::7 }}
+            --name=PROD_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
 
       # - name: Read training report
       #   id: report
