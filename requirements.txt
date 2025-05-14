@@ -1,10 +1,5 @@
-pip-tools
 zenml>=0.82.0
-pdfkit
-numpy<2.0.0
-pytorch-ignite
-opencv-python
-torchvision
-torch
-scikit-image
-anywidget
+pandas
+numpy
+scikit-learn
+plotly
