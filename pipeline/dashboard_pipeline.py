@@ -44,6 +44,7 @@ def price_prediction_pipeline(epochs: int = 15, data_analysis: bool = True):
 
     if data_analysis:
         data_analysis = analyze_data(raw_data)
+        
         # Generate two separate reports
         data_report = generate_data_analysis_report(raw_data, cleaned_data, data_analysis)
     
