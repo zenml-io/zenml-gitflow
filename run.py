@@ -45,13 +45,6 @@ def main(environment: str, stack: str, name: str = None,  run: bool = False):
                 name=name,
             )
 
-        config = template.config_template
-
-        pipeline_run = client.trigger_pipeline(
-            template_id=template.id,
-            run_configuration=config,
-        )
-
     elif environment == "production":
         
         template = price_prediction_pipeline.create_run_template(
@@ -61,6 +54,13 @@ def main(environment: str, stack: str, name: str = None,  run: bool = False):
 
     else:
         raise ValueError(f"Invalid environment: {environment}")
+
+    if run:
+        config = template.config_template
+        client.trigger_pipeline(
+            template_id=template.id,
+            run_configuration=config,
+        )
 
 
 if __name__ == "__main__":
