@@ -1,0 +1,13 @@
+enable_cache: True
+
+parameters:
+  epochs: 5
+  data_analysis: True
+
+settings:
+  docker:
+    requirements:
+      - pandas
+      - numpy
+      - scikit-learn
+      - plotly

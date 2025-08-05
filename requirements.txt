@@ -1,3 +1,5 @@
-pip-tools
-zenml>=0.55.2
-pdfkit
+zenml<=0.84.1
+pandas
+numpy
+scikit-learn
+plotly
