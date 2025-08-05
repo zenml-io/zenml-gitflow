@@ -21,9 +21,14 @@ from zenml.client import Client
 @click.option(
     "--name",
     type=str,
-    help="Name of the pipeline run.",
+    help="Name of the pipeline template.",
 )
-def main(environment: str, stack: str, name: str = None):
+@click.option(
+    "--run",
+    type=bool,
+    help="Whether to also run.",
+)
+def main(environment: str, stack: str, name: str = None,  run: bool = False):
     """
     CLI to run a pipeline with specified parameters.
     """

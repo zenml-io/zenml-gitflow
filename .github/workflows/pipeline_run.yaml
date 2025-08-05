@@ -70,6 +70,7 @@ jobs:
             --environment=staging \
             --stack=zenml-full-gcp-stack \
             --name=STG_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
+            --run
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
