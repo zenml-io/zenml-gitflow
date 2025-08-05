@@ -37,23 +37,11 @@ def main(environment: str, stack: str, name: str = None,  run: bool = False):
     remote_stack = client.get_stack(stack)
     os.environ["ZENML_ACTIVE_STACK_ID"] = str(remote_stack.id)
 
-    if environment == "staging":
-
-        template = price_prediction_pipeline.with_options(
-                config_path=f"configs/{environment}.yml",
-            ).create_run_template(
-                name=name,
-            )
-
-    elif environment == "production":
-        
-        template = price_prediction_pipeline.create_run_template(
+    template = price_prediction_pipeline.with_options(
+            config_path=f"configs/{environment}.yml",
+        ).create_run_template(
             name=name,
-            # config_path=config_path,
         )
-
-    else:
-        raise ValueError(f"Invalid environment: {environment}")
 
     if run:
         config = template.config_template
