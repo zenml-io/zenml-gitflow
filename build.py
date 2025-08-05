@@ -1,0 +1,58 @@
+import os
+
+import click
+from zenml.client import Client
+
+from pipeline.dashboard_pipeline import price_prediction_pipeline
+
+
+@click.command()
+@click.option(
+    "--environment",
+    type=click.Choice(["staging", "production"]),
+    default="staging",
+    show_default=True,
+    help="Environment to run the pipeline in.",
+)
+@click.option(
+    "--stack",
+    type=str,
+    help="Stack to run the pipeline in.",
+)
+@click.option(
+    "--name",
+    type=str,
+    help="Name of the pipeline template.",
+)
+@click.option(
+    "--run",
+    is_flag=True,
+    help="Whether to also run."
+)
+def main(environment: str, stack: str, name: str = None, run: bool = False):
+    """
+    CLI to build a pipeline template with specified parameters.
+
+    Optionally runs the pipeline if the `--run` flag is set.
+    """
+    client = Client()
+
+    remote_stack = client.get_stack(stack)
+    os.environ["ZENML_ACTIVE_STACK_ID"] = str(remote_stack.id)
+
+    template = price_prediction_pipeline.with_options(
+        config_path=f"configs/{environment}.yml",
+    ).create_run_template(
+        name=name,
+    )
+
+    if run:
+        config = template.config_template
+        client.trigger_pipeline(
+            template_id=template.id,
+            run_configuration=config,
+        )
+
+
+if __name__ == "__main__":
+    main()

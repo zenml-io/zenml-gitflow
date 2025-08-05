@@ -66,15 +66,16 @@ jobs:
       - name: Run pipeline (Staging)
         if: ${{ github.base_ref == 'staging' }}
         run: |
-          python run.py \
+          python build.py \
             --environment=staging \
             --stack=zenml-full-gcp-stack \
-            --name=STG_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
+            --name=STG_price_prediction_training_${{ env.ZENML_GITHUB_SHA }} \
+            --run
 
       - name: Run pipeline (Production)
         if: ${{ github.base_ref == 'main' }}
         run: |
-          python run.py \
+          python build.py \
             --environment=production \
             --stack=zenml-full-gcp-stack \
             --name=PROD_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
