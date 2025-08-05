@@ -1,9 +1,8 @@
 import argparse
 
+from configs.global_conf import MODEL_NAME
 from zenml.client import Client
 from zenml.enums import ModelStages
-
-from configs.global_conf import MODEL_NAME
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

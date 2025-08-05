@@ -1,7 +1,7 @@
 #!/bin/sh -e
 set -x
 
-SRC=${1:-"run*.py promote.py steps/ pipelines/"}
+SRC=${1:-"run*.py promote.py steps/ pipeline/"}
 
 export ZENML_DEBUG=1
 export ZENML_ANALYTICS_OPT_IN=false

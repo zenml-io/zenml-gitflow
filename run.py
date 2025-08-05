@@ -1,13 +1,14 @@
 import os
+
 import click
+from zenml.client import Client
 
 from pipeline.dashboard_pipeline import price_prediction_pipeline
 
-from zenml.client import Client
 
 @click.command()
 @click.option(
-    "--environment",    
+    "--environment",
     type=click.Choice(["staging", "production"]),
     default="staging",
     show_default=True,
@@ -28,7 +29,7 @@ from zenml.client import Client
     type=bool,
     help="Whether to also run.",
 )
-def main(environment: str, stack: str, name: str = None,  run: bool = False):
+def main(environment: str, stack: str, name: str = None, run: bool = False):
     """
     CLI to run a pipeline with specified parameters.
     """
@@ -38,10 +39,10 @@ def main(environment: str, stack: str, name: str = None,  run: bool = False):
     os.environ["ZENML_ACTIVE_STACK_ID"] = str(remote_stack.id)
 
     template = price_prediction_pipeline.with_options(
-            config_path=f"configs/{environment}.yml",
-        ).create_run_template(
-            name=name,
-        )
+        config_path=f"configs/{environment}.yml",
+    ).create_run_template(
+        name=name,
+    )
 
     if run:
         config = template.config_template
