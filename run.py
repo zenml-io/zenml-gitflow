@@ -26,8 +26,8 @@ from pipeline.dashboard_pipeline import price_prediction_pipeline
 )
 @click.option(
     "--run",
-    type=bool,
-    help="Whether to also run.",
+    is_flag=True,
+    help="Whether to also run."
 )
 def main(environment: str, stack: str, name: str = None, run: bool = False):
     """
