@@ -145,7 +145,7 @@ pip install -r requirements.txt
 3. Run the pipeline using `run.py`:
 
 ```bash
-python run.py --environment staging --stack <your-stack-name>
+python build.py --environment staging --stack <your-stack-name>
 ```
 
 **Available options:**
