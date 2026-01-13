@@ -12,9 +12,9 @@ repository = "https://github.com/zenml-io/zenml"
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<=3.10"
+python = ">=3.10,<3.14"
 pip-tools = ">=6.12.1"
-zenml = "^0.32.0"
+zenml = "^0.84.0"
 pdfkit = ">=1.0.0"
 
 [tool.poetry.dev-dependencies]

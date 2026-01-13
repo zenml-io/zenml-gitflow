@@ -1,5 +1,6 @@
-zenml<=0.84.1
+zenml>=0.93.0
 pandas
 numpy
 scikit-learn
 plotly
+pygithub

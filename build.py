@@ -22,7 +22,7 @@ from pipeline.dashboard_pipeline import price_prediction_pipeline
 @click.option(
     "--name",
     type=str,
-    help="Name of the pipeline template.",
+    help="Name of the pipeline snapshot.",
 )
 @click.option(
     "--run",
@@ -31,7 +31,7 @@ from pipeline.dashboard_pipeline import price_prediction_pipeline
 )
 def main(environment: str, stack: str, name: str = None, run: bool = False):
     """
-    CLI to build a pipeline template with specified parameters.
+    CLI to build a pipeline snapshot with specified parameters.
 
     Optionally runs the pipeline if the `--run` flag is set.
     """
@@ -40,16 +40,17 @@ def main(environment: str, stack: str, name: str = None, run: bool = False):
     remote_stack = client.get_stack(stack)
     os.environ["ZENML_ACTIVE_STACK_ID"] = str(remote_stack.id)
 
-    template = price_prediction_pipeline.with_options(
+    # Create a pipeline snapshot (replaces deprecated run templates)
+    snapshot = price_prediction_pipeline.with_options(
         config_path=f"configs/{environment}.yml",
-    ).create_run_template(
+    ).create_snapshot(
         name=name,
     )
 
     if run:
-        config = template.config_template
+        config = snapshot.config_template
         client.trigger_pipeline(
-            template_id=template.id,
+            snapshot_name_or_id=snapshot.id,
             run_configuration=config,
         )
 
