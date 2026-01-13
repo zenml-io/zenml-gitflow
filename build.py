@@ -2,10 +2,11 @@ import os
 from typing import Optional
 
 import click
+from zenml import add_tags
 from zenml.client import Client
 
 from pipeline.dashboard_pipeline import price_prediction_pipeline
-from utils.project_config import get_snapshot_name
+from utils.project_config import get_snapshot_name, get_pipeline_tags, get_config
 
 
 @click.command()
@@ -76,12 +77,26 @@ def main(
     )
     click.echo(f"Snapshot created successfully: {snapshot.id}")
 
+    # Add tags to the snapshot (tags must be added after creation)
+    project_config = get_config()
+    snapshot_tags = get_pipeline_tags(environment)
+    
+    # Add model tags as well
+    snapshot_tags.extend(project_config.model.tags)
+    
+    # Remove duplicates while preserving order
+    snapshot_tags = list(dict.fromkeys(snapshot_tags))
+    
+    if snapshot_tags:
+        click.echo(f"Adding tags to snapshot: {snapshot_tags}")
+        add_tags(tags=snapshot_tags, snapshot=snapshot.id)
+
     if run:
         click.echo("Triggering pipeline run...")
-        config = snapshot.config_template
+        run_config = snapshot.config_template
         run_response = client.trigger_pipeline(
             snapshot_name_or_id=snapshot.id,
-            run_configuration=config,
+            run_configuration=run_config,
         )
         click.echo(f"Pipeline run triggered: {run_response.id}")
 
