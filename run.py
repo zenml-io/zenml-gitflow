@@ -1,6 +1,6 @@
 import click
 
-from pipeline.dashboard_pipeline import price_prediction_pipeline
+from pipeline.training_pipeline import price_prediction_pipeline
 from utils.project_config import get_config
 
 
