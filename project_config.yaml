@@ -1,0 +1,69 @@
+# =============================================================================
+# PROJECT CONFIGURATION
+# =============================================================================
+# This is the central configuration file for your ZenML project.
+# Customize these values when you fork this template repository.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Project Information
+# -----------------------------------------------------------------------------
+project:
+  # The name of your project (used for organization in ZenML)
+  name: "price-prediction"
+  # A brief description of what your project does
+  description: "End-to-end ML pipeline for price prediction"
+
+# -----------------------------------------------------------------------------
+# Model Configuration
+# -----------------------------------------------------------------------------
+model:
+  # The name of your model in ZenML Model Control Plane
+  name: "PricePredictionModel"
+  # Description shown in the ZenML dashboard
+  description: "End-to-end pipeline for price prediction"
+  # Tags to apply to your model (for filtering/organization)
+  tags:
+    - "regression"
+    - "pricing"
+
+# -----------------------------------------------------------------------------
+# Pipeline Configuration
+# -----------------------------------------------------------------------------
+pipeline:
+  # Base name for your pipeline
+  name: "price_prediction_pipeline"
+  # Prefix for pipeline run names (will append _{date}_{time} for uniqueness)
+  run_name_prefix: "training_run"
+  # Tags applied to all pipeline runs
+  tags:
+    - "training"
+
+# -----------------------------------------------------------------------------
+# Snapshot Configuration
+# -----------------------------------------------------------------------------
+# Snapshots are immutable captures of your pipeline for deployment
+snapshot:
+  # Prefix for snapshot names
+  # Staging: STG_{prefix}_{git_sha}
+  # Production: PROD_{prefix}_{git_sha}
+  prefix: "price_prediction"
+
+# -----------------------------------------------------------------------------
+# Environment-Specific Overrides
+# -----------------------------------------------------------------------------
+# These can be overridden in configs/local.yml, configs/staging.yml, etc.
+environments:
+  local:
+    tags:
+      - "local"
+      - "development"
+  staging:
+    tags:
+      - "staging"
+      - "pre-release"
+  production:
+    tags:
+      - "production"
+      - "release"
+

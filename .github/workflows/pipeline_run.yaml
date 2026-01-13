@@ -11,13 +11,19 @@ jobs:
   run-zenml-pipeline:
     runs-on: ubuntu-latest
     env:
-      ZENML_STORE_URL: https://11870fb5-zenml.cloudinfra.zenml.io  # Replace with your workspace name
+      # =======================================================================
+      # CONFIGURATION - Update these values for your ZenML setup
+      # =======================================================================
+      ZENML_STORE_URL: https://11870fb5-zenml.cloudinfra.zenml.io
       ZENML_STORE_API_KEY: ${{ secrets.ZENML_API_KEY }}
-      ZENML_PROJECT: Gitflow # Replace with your project name
-      ZENML_STAGING_STACK: zenml-full-gcp-stack # Replace with your staging stack name
-      ZENML_PRODUCTION_STACK: zenml-full-gcp-stack # Replace with your production stack name  
+      ZENML_PROJECT: Gitflow
+      ZENML_STAGING_STACK: zenml-full-gcp-stack
+      ZENML_PRODUCTION_STACK: zenml-full-gcp-stack
+      # =======================================================================
+      # Auto-populated from GitHub context (used for snapshot naming)
       ZENML_GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
       ZENML_GITHUB_URL_PR: ${{ github.event.pull_request._links.html.href }}
+      # ZenML settings
       ZENML_DEBUG: true
       ZENML_ANALYTICS_OPT_IN: false
       ZENML_LOGGING_VERBOSITY: INFO
@@ -26,35 +32,37 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
+          # Checkout the PR head branch to avoid detached HEAD state
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
-            
-      - uses: actions/setup-python@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           
-      - name: Install requirements
+      - name: Install requirements (Staging)
         if: ${{ github.base_ref == 'staging' }}
         run: |
           pip install uv
           uv pip install --system -r requirements.txt
           zenml integration install gcp sklearn -y --uv
       
-      - name: Install requirements
+      - name: Install requirements (Production)
         if: ${{ github.base_ref == 'main' }}
         run: |
           pip install uv  
           uv pip install --system -r requirements.txt
           zenml integration install gcp sklearn -y --uv
 
-      - name: Install wkhtmltopdf
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y wkhtmltopdf
 
-      - name: Login to ZenML server
+      - name: Connect to ZenML server
         run: |
-          zenml project set gitflow
+          zenml project set ${{ env.ZENML_PROJECT }}
 
       - name: Set stack (Staging)
         if: ${{ github.base_ref == 'staging' }}
@@ -66,23 +74,24 @@ jobs:
         run: |
           zenml stack set ${{ env.ZENML_PRODUCTION_STACK }}
 
-      - name: Run pipeline (Staging)
+      # Staging: Create snapshot AND run the pipeline
+      - name: Create snapshot and run pipeline (Staging)
         if: ${{ github.base_ref == 'staging' }}
         run: |
           python build.py \
             --environment=staging \
-            --stack=zenml-full-gcp-stack \
-            --name=STG_price_prediction_training_${{ env.ZENML_GITHUB_SHA }} \
+            --stack=${{ env.ZENML_STAGING_STACK }} \
             --run
 
-      - name: Run pipeline (Production)
+      # Production: Only create snapshot (manual approval required to run)
+      - name: Build pipeline snapshot (Production)
         if: ${{ github.base_ref == 'main' }}
         run: |
           python build.py \
             --environment=production \
-            --stack=zenml-full-gcp-stack \
-            --name=PROD_price_prediction_training_${{ env.ZENML_GITHUB_SHA }}
+            --stack=${{ env.ZENML_PRODUCTION_STACK }}
 
+      # Uncomment to enable PR comments with training reports
       # - name: Read training report
       #   id: report
       #   uses: juliangruber/read-file-action@v1
