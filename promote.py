@@ -1,8 +1,10 @@
 import argparse
 
-from configs.global_conf import MODEL_NAME
 from zenml.client import Client
 from zenml.enums import ModelStages
+
+# Model name should match the one defined in pipeline/dashboard_pipeline.py
+MODEL_NAME = "PricePredictionModel"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
