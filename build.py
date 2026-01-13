@@ -5,7 +5,7 @@ import click
 from zenml import add_tags
 from zenml.client import Client
 
-from pipeline.dashboard_pipeline import price_prediction_pipeline
+from pipeline.training_pipeline import price_prediction_pipeline
 from utils.project_config import get_snapshot_name, get_pipeline_tags, get_config
 
 

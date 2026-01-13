@@ -48,3 +48,4 @@ def price_prediction_pipeline(epochs: int = 15, data_analysis: bool = True):
 
 if __name__ == "__main__":
     price_prediction_pipeline(epochs=10)
+
