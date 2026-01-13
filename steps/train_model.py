@@ -18,7 +18,7 @@ from utils.utils import generate_model_report
 
 @step(enable_cache=False)
 def train_model(
-    data: pd.DataFrame, epochs: int
+    data: pd.DataFrame, epochs: int = 30
 ) -> Tuple[
     Annotated[
         Pipeline,
