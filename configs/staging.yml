@@ -1,8 +1,18 @@
+# Staging Environment Configuration
+# Run name uses placeholders that ZenML will replace at runtime
+run_name: "{run_name_prefix}_staging_{date}_{time}"
+
 enable_cache: False
 
+# Pipeline parameters
 parameters:
   epochs: 10
   data_analysis: False
+
+# Tags for staging runs (merged with project_config.yaml tags)
+tags:
+  - "staging"
+  - "pre-release"
 
 settings:
   docker:

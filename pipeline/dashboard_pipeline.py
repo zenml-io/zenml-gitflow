@@ -6,19 +6,31 @@ from steps.clean_data import clean_data
 from steps.generate_data_analysis_report import generate_data_analysis_report
 from steps.load_data import load_data
 from steps.train_model import train_model
+from utils.project_config import get_config
+
+
+# Load project configuration
+config = get_config()
 
 
 @pipeline(
+    name=config.pipeline.name,
     enable_cache=True,
     model=Model(
-        name="PricePredictionModel",
-        description="End-to-end pipeline for price prediction.",
+        name=config.model.name,
+        description=config.model.description,
+        tags=config.model.tags,
     ),
     settings={
         "docker": DockerSettings(
             python_package_installer="uv",
             requirements=["pandas", "numpy", "scikit-learn", "plotly"],
         ),
+    },
+    # Use substitutions for dynamic run names
+    # The {run_name_prefix} will be replaced by the value from config
+    substitutions={
+        "run_name_prefix": config.pipeline.run_name_prefix,
     },
 )
 def price_prediction_pipeline(epochs: int = 15, data_analysis: bool = True):

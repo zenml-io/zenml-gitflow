@@ -1,8 +1,18 @@
+# Local Development Configuration
+# Run name uses placeholders that ZenML will replace at runtime
+run_name: "{run_name_prefix}_local_{date}_{time}"
+
 enable_cache: True
 
+# Pipeline parameters
 parameters:
   epochs: 5
   data_analysis: True
+
+# Tags for local runs (merged with project_config.yaml tags)
+tags:
+  - "local"
+  - "development"
 
 settings:
   docker:
